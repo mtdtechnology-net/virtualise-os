@@ -1,9 +1,10 @@
-/*
-See the LICENSE.txt file for this sample’s licensing information.
-
-Abstract:
-The app delegate that sets up and starts the virtual machine.
-*/
+//
+//  AppDelegate.swift
+//  VirtualiseOS
+//
+//  Created by Daniel Mandea on 15.05.2025.
+//  Copyright © 2026 M.T.D.Technology SRL. All rights reserved.
+//
 
 import Cocoa
 import Foundation

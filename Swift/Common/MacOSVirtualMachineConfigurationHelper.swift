@@ -1,9 +1,10 @@
-/*
-See the LICENSE.txt file for this sample’s licensing information.
-
-Abstract:
-The helper that creates various configuration objects exposed in the `VZVirtualMachineConfiguration`.
-*/
+//
+//  MacOSVirtualMachineConfigurationHelper.swift
+//  VirtualiseOS
+//
+//  Created by Daniel Mandea on 15.05.2025.
+//  Copyright © 2026 M.T.D.Technology SRL. All rights reserved.
+//
 
 import Foundation
 import Virtualization

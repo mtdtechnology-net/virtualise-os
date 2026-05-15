@@ -1,9 +1,10 @@
-/*
-See the LICENSE.txt file for this sample’s licensing information.
-
-Abstract:
-Download the latest macOS restore image from the network.
-*/
+//
+//  MacOSRestoreImage.swift
+//  VirtualiseOS
+//
+//  Created by Daniel Mandea on 15.05.2025.
+//  Copyright © 2026 M.T.D.Technology SRL. All rights reserved.
+//
 
 import Foundation
 import Virtualization

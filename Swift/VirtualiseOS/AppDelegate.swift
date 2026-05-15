@@ -303,17 +303,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let secondaryTextColor = NSColor.white.withAlphaComponent(0.72)
 
         let titleLabel = NSTextField(labelWithString: MacOSVirtualMachineConfigurationHelper.localized("Preparing VirtualiseOS"))
-        titleLabel.font = .systemFont(ofSize: 24, weight: .semibold)
+        titleLabel.font = .systemFont(ofSize: 30, weight: .semibold)
         titleLabel.textColor = primaryTextColor
         titleLabel.alignment = .center
 
         let statusLabel = NSTextField(labelWithString: MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is not installed"))
-        statusLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        statusLabel.font = .systemFont(ofSize: 17, weight: .medium)
         statusLabel.textColor = primaryTextColor
         statusLabel.alignment = .center
 
         let detailLabel = NSTextField(labelWithString: MacOSVirtualMachineConfigurationHelper.localized("Download and install the latest macOS version supported by this Mac."))
-        detailLabel.font = .systemFont(ofSize: 13)
+        detailLabel.font = .systemFont(ofSize: 14)
         detailLabel.textColor = secondaryTextColor
         detailLabel.alignment = .center
         detailLabel.lineBreakMode = .byWordWrapping
@@ -348,7 +348,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let memoryStackView = NSStackView(views: [memoryLabel, memorySizePopUpButton])
         memoryStackView.orientation = .horizontal
         memoryStackView.alignment = .centerY
-        memoryStackView.spacing = 10
+        memoryStackView.distribution = .equalSpacing
+        memoryStackView.spacing = 16
 
         let vmLocationTitleLabel = NSTextField(labelWithString: MacOSVirtualMachineConfigurationHelper.localized("VM Location"))
         vmLocationTitleLabel.font = .systemFont(ofSize: 13, weight: .medium)
@@ -370,7 +371,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let vmLocationHeaderStackView = NSStackView(views: [vmLocationTitleLabel, vmLocationButton])
         vmLocationHeaderStackView.orientation = .horizontal
         vmLocationHeaderStackView.alignment = .centerY
-        vmLocationHeaderStackView.spacing = 10
+        vmLocationHeaderStackView.distribution = .equalSpacing
+        vmLocationHeaderStackView.spacing = 16
 
         let vmLocationStackView = NSStackView(views: [vmLocationHeaderStackView, vmLocationPathLabel])
         vmLocationStackView.orientation = .vertical
@@ -397,7 +399,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let sharedFolderHeaderStackView = NSStackView(views: [sharedFolderTitleLabel, sharedFolderButton])
         sharedFolderHeaderStackView.orientation = .horizontal
         sharedFolderHeaderStackView.alignment = .centerY
-        sharedFolderHeaderStackView.spacing = 10
+        sharedFolderHeaderStackView.distribution = .equalSpacing
+        sharedFolderHeaderStackView.spacing = 16
 
         let sharedFolderStackView = NSStackView(views: [sharedFolderHeaderStackView, sharedFolderPathLabel])
         sharedFolderStackView.orientation = .vertical
@@ -407,8 +410,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let stackView = NSStackView(views: [titleLabel, statusLabel, detailLabel, memoryStackView, vmLocationStackView, sharedFolderStackView, installButton, progressIndicator])
         stackView.orientation = .vertical
         stackView.alignment = .centerX
-        stackView.spacing = 16
+        stackView.spacing = 18
         stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        let panelView = NSView()
+        panelView.wantsLayer = true
+        panelView.translatesAutoresizingMaskIntoConstraints = false
+        panelView.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.10).cgColor
+        panelView.layer?.cornerRadius = 22
+        panelView.layer?.borderColor = NSColor.white.withAlphaComponent(0.18).cgColor
+        panelView.layer?.borderWidth = 1
+        panelView.layer?.shadowColor = NSColor.black.cgColor
+        panelView.layer?.shadowOpacity = 0.18
+        panelView.layer?.shadowRadius = 24
+        panelView.layer?.shadowOffset = CGSize(width: 0, height: -8)
 
         let logoImageView = NSImageView()
         logoImageView.image = NSImage(named: "logo")
@@ -416,16 +431,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         logoImageView.translatesAutoresizingMaskIntoConstraints = false
         logoImageView.isHidden = logoImageView.image == nil
 
-        contentView.addSubview(stackView)
+        contentView.addSubview(panelView)
+        panelView.addSubview(stackView)
         contentView.addSubview(logoImageView)
         NSLayoutConstraint.activate([
-            stackView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            stackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            stackView.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: 48),
-            stackView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -48),
-            progressIndicator.widthAnchor.constraint(equalToConstant: 360),
+            panelView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            panelView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            panelView.widthAnchor.constraint(equalToConstant: 560),
+            panelView.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: 48),
+            panelView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -48),
+            stackView.topAnchor.constraint(equalTo: panelView.topAnchor, constant: 44),
+            stackView.bottomAnchor.constraint(equalTo: panelView.bottomAnchor, constant: -44),
+            stackView.leadingAnchor.constraint(equalTo: panelView.leadingAnchor, constant: 48),
+            stackView.trailingAnchor.constraint(equalTo: panelView.trailingAnchor, constant: -48),
+            progressIndicator.widthAnchor.constraint(equalToConstant: 420),
             detailLabel.widthAnchor.constraint(equalToConstant: 420),
+            installButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 260),
+            installButton.heightAnchor.constraint(equalToConstant: 36),
+            memorySizePopUpButton.widthAnchor.constraint(equalToConstant: 160),
+            memorySizePopUpButton.heightAnchor.constraint(equalToConstant: 34),
+            vmLocationButton.widthAnchor.constraint(equalToConstant: 168),
+            vmLocationButton.heightAnchor.constraint(equalToConstant: 34),
+            sharedFolderButton.widthAnchor.constraint(equalToConstant: 168),
+            sharedFolderButton.heightAnchor.constraint(equalToConstant: 34),
+            memoryStackView.widthAnchor.constraint(equalToConstant: 420),
+            vmLocationHeaderStackView.widthAnchor.constraint(equalToConstant: 420),
             vmLocationPathLabel.widthAnchor.constraint(equalToConstant: 420),
+            sharedFolderHeaderStackView.widthAnchor.constraint(equalToConstant: 420),
             sharedFolderPathLabel.widthAnchor.constraint(equalToConstant: 420),
             logoImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -28),
             logoImageView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24),
@@ -454,6 +486,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func styleSetupButton(_ button: NSButton) {
+        button.isBordered = false
+        button.wantsLayer = true
+        button.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.16).cgColor
+        button.layer?.cornerRadius = 16
+        button.layer?.borderColor = NSColor.white.withAlphaComponent(0.30).cgColor
+        button.layer?.borderWidth = 1
         setSetupButtonTitle(button.title, for: button)
     }
 

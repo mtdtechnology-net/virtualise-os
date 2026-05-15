@@ -21,7 +21,7 @@ class MacOSRestoreImage: NSObject {
         VZMacOSRestoreImage.fetchLatestSupported { [self](result: Result<VZMacOSRestoreImage, Error>) in
             switch result {
                 case let .failure(error):
-                    fatalError(error.localizedDescription)
+                    MacOSVirtualMachineConfigurationHelper.showErrorAndExit(error.localizedDescription)
 
                 case let .success(restoreImage):
                     NSLog("Latest supported macOS restore image: \(restoreImage.operatingSystemVersion) (\(restoreImage.buildVersion)).")
@@ -35,19 +35,19 @@ class MacOSRestoreImage: NSObject {
     private func downloadRestoreImage(restoreImage: VZMacOSRestoreImage, completionHandler: @escaping () -> Void) {
         let downloadTask = URLSession.shared.downloadTask(with: restoreImage.url) { localURL, response, error in
             if let error = error {
-                fatalError("Download failed. \(error.localizedDescription).")
+                MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Download failed. %@.", error.localizedDescription))
             }
 
             if FileManager.default.fileExists(atPath: restoreImageURL.path) {
                 do {
                     try FileManager.default.removeItem(at: restoreImageURL)
                 } catch {
-                    fatalError("Failed to remove existing restore image at \(restoreImageURL).")
+                    MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Failed to remove existing restore image at %@.", restoreImageURL.path))
                 }
             }
 
             guard (try? FileManager.default.moveItem(at: localURL!, to: restoreImageURL)) != nil else {
-                fatalError("Failed to move downloaded restore image to \(restoreImageURL).")
+                MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Failed to move downloaded restore image to %@.", restoreImageURL.path))
             }
 
             completionHandler()

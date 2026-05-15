@@ -72,14 +72,18 @@ let installer = MacOSVirtualMachineInstaller(diskImageSizeInGiB: arguments.diskI
 installer.setUpVirtualMachineArtifacts()
 
 if let ipswURL = arguments.ipswURL {
-    installer.installMacOS(ipswURL: ipswURL)
+    installer.installMacOS(ipswURL: ipswURL) {
+        exit(0)
+    }
 
     dispatchMain()
 } else {
     let restoreImage = MacOSRestoreImage()
     restoreImage.download {
         // Install from the latest restore image that you downloaded.
-        installer.installMacOS(ipswURL: restoreImageURL)
+        installer.installMacOS(ipswURL: restoreImageURL) {
+            exit(0)
+        }
     }
 
     dispatchMain()

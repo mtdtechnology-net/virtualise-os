@@ -7,14 +7,55 @@
 //
 
 import Foundation
+#if canImport(AppKit)
+import AppKit
+#endif
 import Virtualization
 
 #if arch(arm64)
 
 struct MacOSVirtualMachineConfigurationHelper {
+    static let memorySizeInGiBUserDefaultsKey = "VirtualMachineMemorySizeInGiB"
+    static let sharedDirectoryBookmarkUserDefaultsKey = "SharedDirectoryBookmark"
+    static let defaultMemorySizeInGiB = 4
+
+    private static var activeSharedDirectoryURL: URL?
+
+    static func localized(_ key: String) -> String {
+        return NSLocalizedString(key, comment: "")
+    }
+
+    static func localized(_ key: String, _ arguments: CVarArg...) -> String {
+        return String(format: localized(key), arguments: arguments)
+    }
+
+    static func showErrorAndExit(_ message: String) -> Never {
+        NSLog(message)
+
+#if canImport(AppKit)
+        if Bundle.main.bundleURL.pathExtension == "app" {
+            let showAlert = {
+                let alert = NSAlert()
+                alert.messageText = localized("VirtualiseOS Error")
+                alert.informativeText = message
+                alert.alertStyle = .critical
+                alert.addButton(withTitle: localized("Quit"))
+                alert.runModal()
+            }
+
+            if Thread.isMainThread {
+                showAlert()
+            } else {
+                DispatchQueue.main.sync(execute: showAlert)
+            }
+        }
+#endif
+
+        exit(EXIT_FAILURE)
+    }
+
     static func computeCPUCount() -> Int {
         let totalAvailableCPUs = ProcessInfo.processInfo.processorCount
-
         var virtualCPUCount = totalAvailableCPUs <= 1 ? 1 : totalAvailableCPUs - 1
         virtualCPUCount = max(virtualCPUCount, VZVirtualMachineConfiguration.minimumAllowedCPUCount)
         virtualCPUCount = min(virtualCPUCount, VZVirtualMachineConfiguration.maximumAllowedCPUCount)
@@ -23,9 +64,9 @@ struct MacOSVirtualMachineConfigurationHelper {
     }
 
     static func computeMemorySize() -> UInt64 {
-        // Set the amount of system memory to 4 GB; this is a baseline value
-        // that you can change depending on your use case.
-        var memorySize = (4 * 1024 * 1024 * 1024) as UInt64
+        let configuredMemorySizeInGiB = UserDefaults.standard.integer(forKey: memorySizeInGiBUserDefaultsKey)
+        let memorySizeInGiB = configuredMemorySizeInGiB > 0 ? configuredMemorySizeInGiB : defaultMemorySizeInGiB
+        var memorySize = UInt64(memorySizeInGiB) * 1024 * 1024 * 1024
         memorySize = max(memorySize, VZVirtualMachineConfiguration.minimumAllowedMemorySize)
         memorySize = min(memorySize, VZVirtualMachineConfiguration.maximumAllowedMemorySize)
 
@@ -38,10 +79,23 @@ struct MacOSVirtualMachineConfigurationHelper {
 
     static func createBlockDeviceConfiguration() -> VZVirtioBlockDeviceConfiguration {
         guard let diskImageAttachment = try? VZDiskImageStorageDeviceAttachment(url: diskImageURL, readOnly: false) else {
-            fatalError("Failed to create Disk image.")
+            showErrorAndExit(localized("Failed to create Disk image."))
         }
         let disk = VZVirtioBlockDeviceConfiguration(attachment: diskImageAttachment)
         return disk
+    }
+
+    static func createDirectorySharingDeviceConfiguration() -> VZVirtioFileSystemDeviceConfiguration? {
+        guard let sharedDirectoryURL = resolvedSharedDirectoryURL() else {
+            return nil
+        }
+
+        let sharedDirectory = VZSharedDirectory(url: sharedDirectoryURL, readOnly: false)
+        let singleDirectoryShare = VZSingleDirectoryShare(directory: sharedDirectory)
+        let sharingConfiguration = VZVirtioFileSystemDeviceConfiguration(tag: VZVirtioFileSystemDeviceConfiguration.macOSGuestAutomountTag)
+        sharingConfiguration.share = singleDirectoryShare
+
+        return sharingConfiguration
     }
 
     static func createGraphicsDeviceConfiguration() -> VZMacGraphicsDeviceConfiguration {
@@ -56,12 +110,58 @@ struct MacOSVirtualMachineConfigurationHelper {
 
     static func createNetworkDeviceConfiguration() -> VZVirtioNetworkDeviceConfiguration {
         let networkDevice = VZVirtioNetworkDeviceConfiguration()
-        networkDevice.macAddress = VZMACAddress(string: "d6:a7:58:8e:78:d4")!
+        networkDevice.macAddress = persistedMACAddress()
 
         let networkAttachment = VZNATNetworkDeviceAttachment()
         networkDevice.attachment = networkAttachment
 
         return networkDevice
+    }
+
+    private static func resolvedSharedDirectoryURL() -> URL? {
+        guard let bookmarkData = UserDefaults.standard.data(forKey: sharedDirectoryBookmarkUserDefaultsKey) else {
+            return nil
+        }
+
+        do {
+            var isStale = false
+            let url = try URL(resolvingBookmarkData: bookmarkData,
+                              options: [.withSecurityScope],
+                              relativeTo: nil,
+                              bookmarkDataIsStale: &isStale)
+
+            guard !isStale, url.startAccessingSecurityScopedResource() else {
+                return nil
+            }
+
+            activeSharedDirectoryURL = url
+            return url
+        } catch {
+            NSLog("Failed to resolve shared directory bookmark: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    private static func persistedMACAddress() -> VZMACAddress {
+        if let savedAddress = try? String(contentsOf: macAddressURL, encoding: .utf8)
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+           let macAddress = VZMACAddress(string: savedAddress) {
+            return macAddress
+        }
+
+        let generatedAddress = generateLocalUnicastMACAddress()
+        try? generatedAddress.write(to: macAddressURL, atomically: true, encoding: .utf8)
+
+        guard let macAddress = VZMACAddress(string: generatedAddress) else {
+            showErrorAndExit(localized("Failed to create generated MAC address."))
+        }
+
+        return macAddress
+    }
+
+    private static func generateLocalUnicastMACAddress() -> String {
+        let bytes = [UInt8(0x02)] + (0..<5).map { _ in UInt8.random(in: 0...255) }
+        return bytes.map { String(format: "%02x", $0) }.joined(separator: ":")
     }
 
     static func createSoundDeviceConfiguration() -> VZVirtioSoundDeviceConfiguration {

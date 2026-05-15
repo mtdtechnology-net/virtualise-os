@@ -9,32 +9,79 @@ import Foundation
 
 #if arch(arm64)
 
-let installer = MacOSVirtualMachineInstaller()
+struct InstallationToolArguments {
+    let ipswURL: URL?
+    let diskImageSizeInGiB: UInt64
+}
 
-if CommandLine.arguments.count == 2 {
-    let ipswPath = String(CommandLine.arguments[1])
-    let ipswURL = URL(fileURLWithPath: ipswPath)
-    guard ipswURL.isFileURL else {
-        fatalError("The provided IPSW path is not a valid file URL.")
+func printUsage() {
+    NSLog("""
+    Usage: InstallationTool [--disk-size-gib SIZE] [IPSW_PATH]
+
+    Options:
+      --disk-size-gib SIZE  Size of VM.bundle/Disk.img in GiB. Defaults to \(MacOSVirtualMachineInstaller.defaultDiskImageSizeInGiB).
+
+    Omit IPSW_PATH to download and install the latest macOS restore image supported by this host.
+    """)
+}
+
+func parseArguments(_ arguments: [String]) -> InstallationToolArguments? {
+    var diskImageSizeInGiB = MacOSVirtualMachineInstaller.defaultDiskImageSizeInGiB
+    var ipswPath: String?
+    var index = 1
+
+    while index < arguments.count {
+        let argument = arguments[index]
+
+        switch argument {
+        case "--disk-size-gib", "--disk-size-gb":
+            index += 1
+            guard index < arguments.count,
+                  let size = UInt64(arguments[index]),
+                  size > 0 else {
+                return nil
+            }
+            diskImageSizeInGiB = size
+
+        case "--help", "-h":
+            printUsage()
+            exit(0)
+
+        default:
+            guard !argument.hasPrefix("-"), ipswPath == nil else {
+                return nil
+            }
+            ipswPath = argument
+        }
+
+        index += 1
     }
 
-    installer.setUpVirtualMachineArtifacts()
+    let ipswURL = ipswPath.map { URL(fileURLWithPath: $0) }
+    return InstallationToolArguments(ipswURL: ipswURL, diskImageSizeInGiB: diskImageSizeInGiB)
+}
+
+guard let arguments = parseArguments(CommandLine.arguments) else {
+    printUsage()
+    exit(-1)
+}
+
+let installer = MacOSVirtualMachineInstaller(diskImageSizeInGiB: arguments.diskImageSizeInGiB)
+
+installer.setUpVirtualMachineArtifacts()
+
+if let ipswURL = arguments.ipswURL {
     installer.installMacOS(ipswURL: ipswURL)
 
     dispatchMain()
-} else if CommandLine.arguments.count == 1 {
-    installer.setUpVirtualMachineArtifacts()
-
+} else {
     let restoreImage = MacOSRestoreImage()
     restoreImage.download {
-        // Install from the restore image that you downloaded.
+        // Install from the latest restore image that you downloaded.
         installer.installMacOS(ipswURL: restoreImageURL)
     }
 
     dispatchMain()
-} else {
-    NSLog("Invalid argument. Please either provide the path to an IPSW file, or run this tool without any argument.")
-    exit(-1)
 }
 
 #else

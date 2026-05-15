@@ -23,6 +23,7 @@ class MacOSRestoreImage: NSObject {
                     fatalError(error.localizedDescription)
 
                 case let .success(restoreImage):
+                    NSLog("Latest supported macOS restore image: \(restoreImage.operatingSystemVersion) (\(restoreImage.buildVersion)).")
                     downloadRestoreImage(restoreImage: restoreImage, completionHandler: completionHandler)
             }
         }
@@ -34,6 +35,14 @@ class MacOSRestoreImage: NSObject {
         let downloadTask = URLSession.shared.downloadTask(with: restoreImage.url) { localURL, response, error in
             if let error = error {
                 fatalError("Download failed. \(error.localizedDescription).")
+            }
+
+            if FileManager.default.fileExists(atPath: restoreImageURL.path) {
+                do {
+                    try FileManager.default.removeItem(at: restoreImageURL)
+                } catch {
+                    fatalError("Failed to remove existing restore image at \(restoreImageURL).")
+                }
             }
 
             guard (try? FileManager.default.moveItem(at: localURL!, to: restoreImageURL)) != nil else {

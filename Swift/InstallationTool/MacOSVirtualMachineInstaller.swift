@@ -10,9 +10,25 @@ import Virtualization
 #if arch(arm64)
 
 class MacOSVirtualMachineInstaller: NSObject {
+    static let defaultDiskImageSizeInGiB: UInt64 = 128
+
+    private static let bytesPerGiB: UInt64 = 1024 * 1024 * 1024
+
     private var installationObserver: NSKeyValueObservation?
     private var virtualMachine: VZVirtualMachine!
     private var virtualMachineResponder: MacOSVirtualMachineDelegate?
+    private let diskImageSizeInGiB: UInt64
+    private let diskImageSizeInBytes: UInt64
+
+    init(diskImageSizeInGiB: UInt64 = MacOSVirtualMachineInstaller.defaultDiskImageSizeInGiB) {
+        guard diskImageSizeInGiB > 0,
+              diskImageSizeInGiB <= UInt64(Int64.max) / MacOSVirtualMachineInstaller.bytesPerGiB else {
+            fatalError("The disk image size must be a positive whole number of GiB.")
+        }
+
+        self.diskImageSizeInGiB = diskImageSizeInGiB
+        self.diskImageSizeInBytes = diskImageSizeInGiB * MacOSVirtualMachineInstaller.bytesPerGiB
+    }
 
     // Create a bundle on the user's Home directory to store any artifacts
     // that the installation produces.
@@ -90,7 +106,7 @@ class MacOSVirtualMachineInstaller: NSObject {
             fatalError("memorySize isn't supported by the macOS configuration.")
         }
 
-        // Create a 128 GB disk image.
+        // Create the VM disk image.
         createDiskImage()
 
         virtualMachineConfiguration.bootLoader = MacOSVirtualMachineConfigurationHelper.createBootLoader()
@@ -159,7 +175,7 @@ class MacOSVirtualMachineInstaller: NSObject {
             let process = try Process.run(URL(fileURLWithPath: "/usr/sbin/diskutil"),
                                           arguments: ["image", "create", "blank",
                                                       "--fs", "none", "--format",
-                                                      "ASIF", "--size", "128GiB",
+                                                      "ASIF", "--size", "\(diskImageSizeInGiB)GiB",
                                                       diskImageURL.path])
             process.waitUntilExit()
             if process.terminationStatus != 0 {
@@ -176,8 +192,7 @@ class MacOSVirtualMachineInstaller: NSObject {
             fatalError("Cannot create disk image.")
         }
 
-        // 128 GB disk space.
-        var result = ftruncate(diskFd, 128 * 1024 * 1024 * 1024)
+        var result = ftruncate(diskFd, off_t(diskImageSizeInBytes))
         if result != 0 {
             fatalError("ftruncate() failed.")
         }

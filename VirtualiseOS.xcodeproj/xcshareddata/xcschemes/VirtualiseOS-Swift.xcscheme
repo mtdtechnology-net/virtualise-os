@@ -14,10 +14,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "8F87D53026C341AC000EADA4"
-               BuildableName = "InstallationTool-Swift"
-               BlueprintName = "InstallationTool-Swift"
-               ReferencedContainer = "container:macOSVirtualMachineSampleApp.xcodeproj">
+               BlueprintIdentifier = "8F87D51C26C34111000EADA4"
+               BuildableName = "VirtualiseOS.app"
+               BlueprintName = "VirtualiseOS-Swift"
+               ReferencedContainer = "container:VirtualiseOS.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -44,10 +44,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8F87D53026C341AC000EADA4"
-            BuildableName = "InstallationTool-Swift"
-            BlueprintName = "InstallationTool-Swift"
-            ReferencedContainer = "container:macOSVirtualMachineSampleApp.xcodeproj">
+            BlueprintIdentifier = "8F87D51C26C34111000EADA4"
+            BuildableName = "VirtualiseOS.app"
+            BlueprintName = "VirtualiseOS-Swift"
+            ReferencedContainer = "container:VirtualiseOS.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -61,10 +61,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8F87D53026C341AC000EADA4"
-            BuildableName = "InstallationTool-Swift"
-            BlueprintName = "InstallationTool-Swift"
-            ReferencedContainer = "container:macOSVirtualMachineSampleApp.xcodeproj">
+            BlueprintIdentifier = "8F87D51C26C34111000EADA4"
+            BuildableName = "VirtualiseOS.app"
+            BlueprintName = "VirtualiseOS-Swift"
+            ReferencedContainer = "container:VirtualiseOS.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

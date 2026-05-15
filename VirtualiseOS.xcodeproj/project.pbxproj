@@ -37,7 +37,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		8F87D51D26C34111000EADA4 /* macOSVirtualMachineSampleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = macOSVirtualMachineSampleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8F87D51D26C34111000EADA4 /* VirtualiseOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtualiseOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8F87D52026C34111000EADA4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		8F87D52226C34111000EADA4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8F87D52526C34111000EADA4 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
@@ -45,7 +45,7 @@
 		8F87D53326C341AC000EADA4 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		8F87D53826C3423F000EADA4 /* InstallationTool.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = InstallationTool.entitlements; sourceTree = "<group>"; };
 		8F87D53926C3423F000EADA4 /* MacOSVirtualMachineInstaller.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MacOSVirtualMachineInstaller.swift; sourceTree = "<group>"; };
-		8F87D53B26C34250000EADA4 /* macOSVirtualMachineSampleApp.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = macOSVirtualMachineSampleApp.entitlements; sourceTree = "<group>"; };
+		8F87D53B26C34250000EADA4 /* VirtualiseOS.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = VirtualiseOS.entitlements; sourceTree = "<group>"; };
 		8F87D53C26C34259000EADA4 /* Path.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Path.swift; sourceTree = "<group>"; };
 		8F87D53D26C34259000EADA4 /* MacOSVirtualMachineConfigurationHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MacOSVirtualMachineConfigurationHelper.swift; sourceTree = "<group>"; };
 		8F87D53E26C34259000EADA4 /* MacOSVirtualMachineDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MacOSVirtualMachineDelegate.swift; sourceTree = "<group>"; };
@@ -98,7 +98,7 @@
 			isa = PBXGroup;
 			children = (
 				8F87D54D26C344C4000EADA4 /* README.md */,
-				8F87D53B26C34250000EADA4 /* macOSVirtualMachineSampleApp.entitlements */,
+				8F87D53B26C34250000EADA4 /* VirtualiseOS.entitlements */,
 				8F87D53826C3423F000EADA4 /* InstallationTool.entitlements */,
 				8FDABC17270D0F9100D7FC60 /* Swift */,
 				8F87D51E26C34111000EADA4 /* Products */,
@@ -111,13 +111,13 @@
 		8F87D51E26C34111000EADA4 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8F87D51D26C34111000EADA4 /* macOSVirtualMachineSampleApp.app */,
+				8F87D51D26C34111000EADA4 /* VirtualiseOS.app */,
 				8F87D53126C341AC000EADA4 /* InstallationTool-Swift */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		8F87D51F26C34111000EADA4 /* macOSVirtualMachineSampleApp */ = {
+		8F87D51F26C34111000EADA4 /* VirtualiseOS */ = {
 			isa = PBXGroup;
 			children = (
 				8F87D52026C34111000EADA4 /* AppDelegate.swift */,
@@ -125,7 +125,7 @@
 				8F87D52426C34111000EADA4 /* MainMenu.xib */,
 				8FB90BE826D422FD00988F51 /* Info.plist */,
 			);
-			path = macOSVirtualMachineSampleApp;
+			path = VirtualiseOS;
 			sourceTree = "<group>";
 		};
 		8F87D52C26C3418F000EADA4 /* Common */ = {
@@ -160,7 +160,7 @@
 			isa = PBXGroup;
 			children = (
 				8F87D52C26C3418F000EADA4 /* Common */,
-				8F87D51F26C34111000EADA4 /* macOSVirtualMachineSampleApp */,
+				8F87D51F26C34111000EADA4 /* VirtualiseOS */,
 				8F87D53226C341AC000EADA4 /* InstallationTool */,
 			);
 			path = Swift;
@@ -169,9 +169,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		8F87D51C26C34111000EADA4 /* macOSVirtualMachineSampleApp-Swift */ = {
+		8F87D51C26C34111000EADA4 /* VirtualiseOS-Swift */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 8F87D52926C34111000EADA4 /* Build configuration list for PBXNativeTarget "macOSVirtualMachineSampleApp-Swift" */;
+			buildConfigurationList = 8F87D52926C34111000EADA4 /* Build configuration list for PBXNativeTarget "VirtualiseOS-Swift" */;
 			buildPhases = (
 				8F87D51926C34111000EADA4 /* Sources */,
 				8F87D51A26C34111000EADA4 /* Frameworks */,
@@ -181,9 +181,9 @@
 			);
 			dependencies = (
 			);
-			name = "macOSVirtualMachineSampleApp-Swift";
-			productName = macOSVirtualMachineSampleApp;
-			productReference = 8F87D51D26C34111000EADA4 /* macOSVirtualMachineSampleApp.app */;
+			name = "VirtualiseOS-Swift";
+			productName = VirtualiseOS;
+			productReference = 8F87D51D26C34111000EADA4 /* VirtualiseOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 		8F87D53026C341AC000EADA4 /* InstallationTool-Swift */ = {
@@ -223,7 +223,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 8F87D51826C34111000EADA4 /* Build configuration list for PBXProject "macOSVirtualMachineSampleApp" */;
+			buildConfigurationList = 8F87D51826C34111000EADA4 /* Build configuration list for PBXProject "VirtualiseOS" */;
 			compatibilityVersion = "Xcode 13.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -236,7 +236,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				8F87D51C26C34111000EADA4 /* macOSVirtualMachineSampleApp-Swift */,
+				8F87D51C26C34111000EADA4 /* VirtualiseOS-Swift */,
 				8F87D53026C341AC000EADA4 /* InstallationTool-Swift */,
 			);
 		};
@@ -417,17 +417,25 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = macOSVirtualMachineSampleApp.entitlements;
+				AUTOMATION_APPLE_EVENTS = NO;
+				CODE_SIGN_ENTITLEMENTS = VirtualiseOS.entitlements;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = TH9HJJL4XR;
 				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Swift/macOSVirtualMachineSampleApp/Info.plist;
+				INFOPLIST_FILE = Swift/VirtualiseOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Virtualize;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainNibFile = MainMenu;
@@ -440,8 +448,14 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mtdtechnology.VirtualiseOS;
-				PRODUCT_NAME = macOSVirtualMachineSampleApp;
+				PRODUCT_NAME = VirtualiseOS;
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -453,17 +467,25 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = macOSVirtualMachineSampleApp.entitlements;
+				AUTOMATION_APPLE_EVENTS = NO;
+				CODE_SIGN_ENTITLEMENTS = VirtualiseOS.entitlements;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = TH9HJJL4XR;
 				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Swift/macOSVirtualMachineSampleApp/Info.plist;
+				INFOPLIST_FILE = Swift/VirtualiseOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Virtualize;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainNibFile = MainMenu;
@@ -476,8 +498,14 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mtdtechnology.VirtualiseOS;
-				PRODUCT_NAME = macOSVirtualMachineSampleApp;
+				PRODUCT_NAME = VirtualiseOS;
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -494,7 +522,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.example.apple-samplecode.macOSVirtualMachineSampleApp${SAMPLE_CODE_DISAMBIGUATOR}.macOSVirtualMachineSampleApp";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.mtdtechnology.VirtualiseOS.InstallationTool";
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = com.mtdtechnology.VirtualiseCommandlineTool;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -513,7 +541,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.example.apple-samplecode.macOSVirtualMachineSampleApp${SAMPLE_CODE_DISAMBIGUATOR}.macOSVirtualMachineSampleApp";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.mtdtechnology.VirtualiseOS.InstallationTool";
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = com.mtdtechnology.VirtualiseCommandlineTool;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -524,7 +552,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		8F87D51826C34111000EADA4 /* Build configuration list for PBXProject "macOSVirtualMachineSampleApp" */ = {
+		8F87D51826C34111000EADA4 /* Build configuration list for PBXProject "VirtualiseOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				8F87D52726C34111000EADA4 /* Debug */,
@@ -533,7 +561,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		8F87D52926C34111000EADA4 /* Build configuration list for PBXNativeTarget "macOSVirtualMachineSampleApp-Swift" */ = {
+		8F87D52926C34111000EADA4 /* Build configuration list for PBXNativeTarget "VirtualiseOS-Swift" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				8F87D52A26C34111000EADA4 /* Debug */,

@@ -10,6 +10,45 @@ import Cocoa
 import Foundation
 import Virtualization
 
+private final class SetupProgressView: NSView {
+    var isIndeterminate = false
+    var minValue = 0.0
+    var maxValue = 100.0
+    var doubleValue = 0.0 {
+        didSet {
+            needsDisplay = true
+        }
+    }
+    var controlSize = NSControl.ControlSize.regular
+
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: NSView.noIntrinsicMetric, height: 8)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+
+        let bounds = bounds.insetBy(dx: 0, dy: max((bounds.height - 6) / 2, 0))
+        let trackPath = NSBezierPath(roundedRect: bounds, xRadius: 3, yRadius: 3)
+        NSColor.white.withAlphaComponent(0.22).setFill()
+        trackPath.fill()
+
+        let range = max(maxValue - minValue, 1)
+        let progress = min(max((doubleValue - minValue) / range, 0), 1)
+        guard progress > 0 else {
+            return
+        }
+
+        let fillRect = NSRect(x: bounds.minX,
+                              y: bounds.minY,
+                              width: bounds.width * progress,
+                              height: bounds.height)
+        let fillPath = NSBezierPath(roundedRect: fillRect, xRadius: 3, yRadius: 3)
+        NSColor.white.setFill()
+        fillPath.fill()
+    }
+}
+
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -25,7 +64,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var originalContentView: NSView?
     private weak var installationStatusLabel: NSTextField?
     private weak var installationDetailLabel: NSTextField?
-    private weak var installationProgressIndicator: NSProgressIndicator?
+    private weak var installationProgressIndicator: SetupProgressView?
     private weak var installButton: NSButton?
     private weak var memorySizePopUpButton: NSPopUpButton?
     private weak var vmLocationButton: NSButton?
@@ -34,8 +73,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private weak var sharedFolderPathLabel: NSTextField?
     private var restoreImageDownloadObserver: NSKeyValueObservation?
     private var macOSInstallationObserver: NSKeyValueObservation?
+    private var restoreImageDownloadSession: URLSession?
     private var installationVirtualMachineResponder: MacOSVirtualMachineDelegate?
     private var installationVirtualMachine: VZVirtualMachine?
+    private var isInstallationInProgress = false
 
     private let defaultDiskImageSizeInGiB: UInt64 = 128
 
@@ -167,6 +208,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
     }
 
+    func applicationDidBecomeActive(_ notification: Notification) {
+#if arch(arm64)
+        refreshSetupStateIfNeeded()
+#endif
+    }
+
 #if arch(arm64)
     private func prepareVirtualMachine() {
         if isVirtualMachineInstalled {
@@ -174,6 +221,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             showInstallationScreen()
         }
+    }
+
+    private func refreshSetupStateIfNeeded() {
+        guard virtualMachine == nil,
+              installationProcess == nil,
+              !isInstallationInProgress,
+              installButton != nil else {
+            return
+        }
+
+        updateSetupStateForCurrentVMLocation()
     }
 
     private func configureSharedFolderMenuItem() {
@@ -237,23 +295,31 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let contentView = NSView()
+        contentView.wantsLayer = true
+        contentView.layer?.backgroundColor = (NSColor(named: "backgroundColor") ?? .windowBackgroundColor).cgColor
+        window.backgroundColor = NSColor(named: "backgroundColor") ?? .windowBackgroundColor
+
+        let primaryTextColor = NSColor.white
+        let secondaryTextColor = NSColor.white.withAlphaComponent(0.72)
 
         let titleLabel = NSTextField(labelWithString: MacOSVirtualMachineConfigurationHelper.localized("Preparing VirtualiseOS"))
         titleLabel.font = .systemFont(ofSize: 24, weight: .semibold)
+        titleLabel.textColor = primaryTextColor
         titleLabel.alignment = .center
 
         let statusLabel = NSTextField(labelWithString: MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is not installed"))
         statusLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        statusLabel.textColor = primaryTextColor
         statusLabel.alignment = .center
 
         let detailLabel = NSTextField(labelWithString: MacOSVirtualMachineConfigurationHelper.localized("Download and install the latest macOS version supported by this Mac."))
         detailLabel.font = .systemFont(ofSize: 13)
-        detailLabel.textColor = .secondaryLabelColor
+        detailLabel.textColor = secondaryTextColor
         detailLabel.alignment = .center
         detailLabel.lineBreakMode = .byWordWrapping
         detailLabel.maximumNumberOfLines = 3
 
-        let progressIndicator = NSProgressIndicator()
+        let progressIndicator = SetupProgressView()
         progressIndicator.isIndeterminate = false
         progressIndicator.minValue = 0
         progressIndicator.maxValue = 100
@@ -266,15 +332,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                                      action: #selector(downloadAndInstallLatestMacOS))
         installButton.bezelStyle = .rounded
         installButton.controlSize = .large
+        styleSetupButton(installButton)
 
         let memoryLabel = NSTextField(labelWithString: MacOSVirtualMachineConfigurationHelper.localized("Memory"))
         memoryLabel.font = .systemFont(ofSize: 13, weight: .medium)
+        memoryLabel.textColor = primaryTextColor
 
         let memorySizePopUpButton = NSPopUpButton()
         memorySizePopUpButton.controlSize = .large
         memorySizePopUpButton.target = self
         memorySizePopUpButton.action = #selector(memorySizeSelectionDidChange)
         configureMemorySizePopUpButton(memorySizePopUpButton)
+        styleSetupPopUpButton(memorySizePopUpButton)
 
         let memoryStackView = NSStackView(views: [memoryLabel, memorySizePopUpButton])
         memoryStackView.orientation = .horizontal
@@ -283,16 +352,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let vmLocationTitleLabel = NSTextField(labelWithString: MacOSVirtualMachineConfigurationHelper.localized("VM Location"))
         vmLocationTitleLabel.font = .systemFont(ofSize: 13, weight: .medium)
+        vmLocationTitleLabel.textColor = primaryTextColor
 
         let vmLocationButton = NSButton(title: MacOSVirtualMachineConfigurationHelper.localized("Choose Folder..."),
                                         target: self,
                                         action: #selector(chooseVMLocation))
         vmLocationButton.bezelStyle = .rounded
         vmLocationButton.controlSize = .large
+        styleSetupButton(vmLocationButton)
 
         let vmLocationPathLabel = NSTextField(labelWithString: vmLocationDescription())
         vmLocationPathLabel.font = .systemFont(ofSize: 12)
-        vmLocationPathLabel.textColor = .secondaryLabelColor
+        vmLocationPathLabel.textColor = secondaryTextColor
         vmLocationPathLabel.lineBreakMode = .byTruncatingMiddle
         vmLocationPathLabel.maximumNumberOfLines = 1
 
@@ -308,16 +379,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let sharedFolderTitleLabel = NSTextField(labelWithString: MacOSVirtualMachineConfigurationHelper.localized("Shared Folder"))
         sharedFolderTitleLabel.font = .systemFont(ofSize: 13, weight: .medium)
+        sharedFolderTitleLabel.textColor = primaryTextColor
 
         let sharedFolderButton = NSButton(title: MacOSVirtualMachineConfigurationHelper.localized("Choose Folder..."),
                                           target: self,
                                           action: #selector(chooseSharedFolder))
         sharedFolderButton.bezelStyle = .rounded
         sharedFolderButton.controlSize = .large
+        styleSetupButton(sharedFolderButton)
 
         let sharedFolderPathLabel = NSTextField(labelWithString: sharedFolderDescription())
         sharedFolderPathLabel.font = .systemFont(ofSize: 12)
-        sharedFolderPathLabel.textColor = .secondaryLabelColor
+        sharedFolderPathLabel.textColor = secondaryTextColor
         sharedFolderPathLabel.lineBreakMode = .byTruncatingMiddle
         sharedFolderPathLabel.maximumNumberOfLines = 1
 
@@ -337,7 +410,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         stackView.spacing = 16
         stackView.translatesAutoresizingMaskIntoConstraints = false
 
+        let logoImageView = NSImageView()
+        logoImageView.image = NSImage(named: "logo")
+        logoImageView.imageScaling = .scaleProportionallyUpOrDown
+        logoImageView.translatesAutoresizingMaskIntoConstraints = false
+        logoImageView.isHidden = logoImageView.image == nil
+
         contentView.addSubview(stackView)
+        contentView.addSubview(logoImageView)
         NSLayoutConstraint.activate([
             stackView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             stackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
@@ -346,7 +426,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             progressIndicator.widthAnchor.constraint(equalToConstant: 360),
             detailLabel.widthAnchor.constraint(equalToConstant: 420),
             vmLocationPathLabel.widthAnchor.constraint(equalToConstant: 420),
-            sharedFolderPathLabel.widthAnchor.constraint(equalToConstant: 420)
+            sharedFolderPathLabel.widthAnchor.constraint(equalToConstant: 420),
+            logoImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -28),
+            logoImageView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24),
+            logoImageView.widthAnchor.constraint(equalToConstant: 120),
+            logoImageView.heightAnchor.constraint(equalToConstant: 56)
         ])
 
         installationStatusLabel = statusLabel
@@ -360,6 +444,39 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         self.sharedFolderPathLabel = sharedFolderPathLabel
         updateSetupStateForCurrentVMLocation()
         window.contentView = contentView
+    }
+
+    private func setupControlTitle(_ title: String, font: NSFont = .systemFont(ofSize: NSFont.systemFontSize)) -> NSAttributedString {
+        NSAttributedString(string: title, attributes: [
+            .foregroundColor: NSColor.white,
+            .font: font
+        ])
+    }
+
+    private func styleSetupButton(_ button: NSButton) {
+        setSetupButtonTitle(button.title, for: button)
+    }
+
+    private func setSetupButtonTitle(_ title: String, for button: NSButton?) {
+        guard let button else {
+            return
+        }
+
+        let font = button.font ?? .systemFont(ofSize: NSFont.systemFontSize)
+        let attributedTitle = setupControlTitle(title, font: font)
+        button.title = title
+        button.attributedTitle = attributedTitle
+        button.attributedAlternateTitle = attributedTitle
+    }
+
+    private func styleSetupPopUpButton(_ popUpButton: NSPopUpButton) {
+        let font = popUpButton.font ?? .systemFont(ofSize: NSFont.systemFontSize)
+        for item in popUpButton.itemArray where !item.title.isEmpty {
+            item.attributedTitle = setupControlTitle(item.title, font: font)
+        }
+
+        let title = popUpButton.titleOfSelectedItem ?? popUpButton.title
+        popUpButton.attributedTitle = setupControlTitle(title, font: font)
     }
 
     private func vmLocationDescription() -> String {
@@ -419,15 +536,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if isVirtualMachineInstalled {
             installationStatusLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is ready")
             installationDetailLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Open the existing VM.bundle at the selected location.")
-            installButton?.title = MacOSVirtualMachineConfigurationHelper.localized("Open VM")
+            setSetupButtonTitle(MacOSVirtualMachineConfigurationHelper.localized("Open VM"), for: installButton)
         } else if FileManager.default.fileExists(atPath: vmBundlePath) {
             installationStatusLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("VM.bundle was found but is incomplete")
             installationDetailLabel?.stringValue = missingVirtualMachineFilesDescription()
-            installButton?.title = MacOSVirtualMachineConfigurationHelper.localized("Download and Install Latest macOS")
+            setSetupButtonTitle(MacOSVirtualMachineConfigurationHelper.localized("Download and Install Latest macOS"), for: installButton)
         } else {
             installationStatusLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is not installed")
             installationDetailLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Download and install the latest macOS version supported by this Mac.")
-            installButton?.title = MacOSVirtualMachineConfigurationHelper.localized("Download and Install Latest macOS")
+            setSetupButtonTitle(MacOSVirtualMachineConfigurationHelper.localized("Download and Install Latest macOS"), for: installButton)
         }
     }
 
@@ -544,6 +661,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         UserDefaults.standard.set(memorySizeInGiB, forKey: MacOSVirtualMachineConfigurationHelper.memorySizeInGiBUserDefaultsKey)
+        styleSetupPopUpButton(sender)
     }
 
     @objc private func downloadAndInstallLatestMacOS() {
@@ -556,6 +674,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             UserDefaults.standard.set(memorySizeInGiB, forKey: MacOSVirtualMachineConfigurationHelper.memorySizeInGiBUserDefaultsKey)
         }
 
+        isInstallationInProgress = true
         installButton?.isEnabled = false
         memorySizePopUpButton?.isEnabled = false
         vmLocationButton?.isEnabled = false
@@ -597,7 +716,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         installationStatusLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Downloading macOS restore image...")
         installationDetailLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("This can take a while depending on network speed.")
 
-        let downloadTask = URLSession.shared.downloadTask(with: restoreImage.url) { [weak self] localURL, response, error in
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 300
+        configuration.timeoutIntervalForResource = 24 * 60 * 60
+
+        let session = URLSession(configuration: configuration)
+        restoreImageDownloadSession = session
+
+        let downloadTask = session.downloadTask(with: restoreImage.url) { [weak self] localURL, response, error in
             DispatchQueue.main.async {
                 if let error {
                     self?.showInstallationFailure(MacOSVirtualMachineConfigurationHelper.localized("Download failed with error: %@", error.localizedDescription))
@@ -615,6 +741,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     }
 
                     try FileManager.default.moveItem(at: localURL, to: restoreImageURL)
+                    self?.restoreImageDownloadSession?.finishTasksAndInvalidate()
+                    self?.restoreImageDownloadSession = nil
                     self?.installMacOS(from: restoreImageURL)
                 } catch {
                     self?.showInstallationFailure(error.localizedDescription)
@@ -625,6 +753,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         restoreImageDownloadObserver = downloadTask.progress.observe(\.fractionCompleted, options: [.initial, .new]) { [weak self] progress, change in
             DispatchQueue.main.async {
                 let percentage = (change.newValue ?? progress.fractionCompleted) * 100
+                self?.installationProgressIndicator?.isHidden = false
                 self?.installationProgressIndicator?.doubleValue = min(percentage * 0.5, 50)
                 self?.installationDetailLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("%d%% downloaded", Int(percentage))
             }
@@ -768,9 +897,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
                 case .success:
                     self?.installationStatusLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Installation complete")
-                    self?.installationDetailLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Starting the virtual machine...")
-                    self?.installationProgressIndicator?.doubleValue = 100
-                    self?.launchVirtualMachine()
+                    self?.finishInstallationAndRefreshSetupState()
                 }
             }
         }
@@ -778,6 +905,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         macOSInstallationObserver = installer.progress.observe(\.fractionCompleted, options: [.initial, .new]) { [weak self] progress, change in
             DispatchQueue.main.async {
                 let percentage = (change.newValue ?? progress.fractionCompleted) * 100
+                self?.installationProgressIndicator?.isHidden = false
                 self?.installationProgressIndicator?.doubleValue = 50 + min(percentage * 0.5, 50)
                 self?.installationDetailLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("%d%% installed", Int(percentage))
             }
@@ -872,7 +1000,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         } else if output.contains("Installation succeeded") {
             installationStatusLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Installation complete")
-            installationDetailLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Starting the virtual machine...")
+            installationDetailLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Open the existing VM.bundle at the selected location.")
             installationProgressIndicator?.doubleValue = 100
         }
     }
@@ -884,21 +1012,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func handleInstallationFinished(with terminationStatus: Int32) {
-        guard terminationStatus == 0, isVirtualMachineInstalled else {
+        guard terminationStatus == 0 else {
             showInstallationFailure(MacOSVirtualMachineConfigurationHelper.localized("The installation tool exited with status %d.", terminationStatus))
             return
         }
 
+        finishInstallationAndRefreshSetupState()
+    }
+
+    private func finishInstallationAndRefreshSetupState() {
+        isInstallationInProgress = false
+        restoreImageDownloadObserver = nil
+        macOSInstallationObserver = nil
+        restoreImageDownloadSession?.finishTasksAndInvalidate()
+        restoreImageDownloadSession = nil
+        installationVirtualMachine = nil
+        installationVirtualMachineResponder = nil
         installationProgressIndicator?.doubleValue = 100
-        launchVirtualMachine()
+        updateSetupStateForCurrentVMLocation()
+
+        if !isVirtualMachineInstalled {
+            showInstallationFailure(missingVirtualMachineFilesDescription())
+        }
     }
 
     private func showInstallationFailure(_ message: String) {
+        isInstallationInProgress = false
+        restoreImageDownloadObserver = nil
+        macOSInstallationObserver = nil
+        restoreImageDownloadSession?.finishTasksAndInvalidate()
+        restoreImageDownloadSession = nil
+        installationVirtualMachine = nil
+        installationVirtualMachineResponder = nil
         installationStatusLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Installation failed")
         installationDetailLabel?.stringValue = message
         installationProgressIndicator?.doubleValue = 0
         installationProgressIndicator?.isHidden = true
-        installButton?.title = MacOSVirtualMachineConfigurationHelper.localized("Retry Download and Install")
+        setSetupButtonTitle(MacOSVirtualMachineConfigurationHelper.localized("Retry Download and Install"), for: installButton)
         installButton?.isHidden = false
         installButton?.isEnabled = true
         memorySizePopUpButton?.isEnabled = true

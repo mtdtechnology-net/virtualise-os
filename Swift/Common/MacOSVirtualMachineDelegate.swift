@@ -10,13 +10,16 @@ import Foundation
 import Virtualization
 
 class MacOSVirtualMachineDelegate: NSObject, VZVirtualMachineDelegate {
+    var didStopWithErrorHandler: ((Error) -> Void)?
+    var guestDidStopHandler: (() -> Void)?
+
     func virtualMachine(_ virtualMachine: VZVirtualMachine, didStopWithError error: Error) {
         NSLog("Virtual machine did stop with error: \(error.localizedDescription)")
-        exit(-1)
+        didStopWithErrorHandler?(error)
     }
 
     func guestDidStop(_ virtualMachine: VZVirtualMachine) {
         NSLog("Guest did stop virtual machine.")
-        exit(0)
+        guestDidStopHandler?()
     }
 }

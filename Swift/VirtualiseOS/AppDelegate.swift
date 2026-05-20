@@ -65,6 +65,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private weak var installationStatusLabel: NSTextField?
     private weak var installationDetailLabel: NSTextField?
     private weak var installationProgressIndicator: SetupProgressView?
+    private weak var launchSpinner: NSProgressIndicator?
     private weak var installButton: NSButton?
     private weak var memorySizePopUpButton: NSPopUpButton?
     private weak var vmLocationButton: NSButton?
@@ -83,39 +84,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: Create the Mac platform configuration.
 
 #if arch(arm64)
-    private func createMacPlaform() -> VZMacPlatformConfiguration {
+    private func createMacPlaform() throws -> VZMacPlatformConfiguration {
         let macPlatform = VZMacPlatformConfiguration()
 
         let auxiliaryStorage = VZMacAuxiliaryStorage(contentsOf: auxiliaryStorageURL)
         macPlatform.auxiliaryStorage = auxiliaryStorage
 
         if !FileManager.default.fileExists(atPath: vmBundlePath) {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Missing Virtual Machine Bundle at %@. Run InstallationTool first to create it.", vmBundlePath))
+            throw virtualMachineSetupError(MacOSVirtualMachineConfigurationHelper.localized("Missing Virtual Machine Bundle at %@. Run InstallationTool first to create it.", vmBundlePath))
         }
 
-        // Retrieve the hardware model and save this value to disk
-        // during installation.
+        // Retrieve the hardware model and save this value to disk during installation.
         guard let hardwareModelData = try? Data(contentsOf: hardwareModelURL) else {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Failed to retrieve hardware model data."))
+            throw virtualMachineSetupError(MacOSVirtualMachineConfigurationHelper.localized("Failed to retrieve hardware model data."))
         }
 
         guard let hardwareModel = VZMacHardwareModel(dataRepresentation: hardwareModelData) else {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Failed to create hardware model."))
+            throw virtualMachineSetupError(MacOSVirtualMachineConfigurationHelper.localized("Failed to create hardware model."))
         }
 
         if !hardwareModel.isSupported {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("The hardware model isn't supported on the current host"))
+            throw virtualMachineSetupError(MacOSVirtualMachineConfigurationHelper.localized("The hardware model isn't supported on the current host"))
         }
         macPlatform.hardwareModel = hardwareModel
 
-        // Retrieve the machine identifier and save this value to disk
-        // during installation.
+        // Retrieve the machine identifier and save this value to disk during installation.
         guard let machineIdentifierData = try? Data(contentsOf: machineIdentifierURL) else {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Failed to retrieve machine identifier data."))
+            throw virtualMachineSetupError(MacOSVirtualMachineConfigurationHelper.localized("Failed to retrieve machine identifier data."))
         }
 
         guard let machineIdentifier = VZMacMachineIdentifier(dataRepresentation: machineIdentifierData) else {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Failed to create machine identifier."))
+            throw virtualMachineSetupError(MacOSVirtualMachineConfigurationHelper.localized("Failed to create machine identifier."))
         }
         macPlatform.machineIdentifier = machineIdentifier
 
@@ -124,10 +123,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: Create the virtual machine configuration and instantiate the virtual machine.
 
-    private func createVirtualMachine() {
+    private func createVirtualMachine() throws {
         let virtualMachineConfiguration = VZVirtualMachineConfiguration()
 
-        virtualMachineConfiguration.platform = createMacPlaform()
+        virtualMachineConfiguration.platform = try createMacPlaform()
         virtualMachineConfiguration.bootLoader = MacOSVirtualMachineConfigurationHelper.createBootLoader()
         virtualMachineConfiguration.cpuCount = MacOSVirtualMachineConfigurationHelper.computeCPUCount()
         virtualMachineConfiguration.memorySize = MacOSVirtualMachineConfigurationHelper.computeMemorySize()
@@ -143,29 +142,53 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         virtualMachineConfiguration.pointingDevices = [MacOSVirtualMachineConfigurationHelper.createPointingDeviceConfiguration()]
         virtualMachineConfiguration.keyboards = [MacOSVirtualMachineConfigurationHelper.createKeyboardConfiguration()]
 
-        try! virtualMachineConfiguration.validate()
+        try virtualMachineConfiguration.validate()
 
         if #available(macOS 14.0, *) {
-            try! virtualMachineConfiguration.validateSaveRestoreSupport()
+            try virtualMachineConfiguration.validateSaveRestoreSupport()
         }
 
         virtualMachine = VZVirtualMachine(configuration: virtualMachineConfiguration)
     }
 
+    private func virtualMachineSetupError(_ message: String) -> NSError {
+        NSError(domain: "VirtualiseOS", code: 10, userInfo: [NSLocalizedDescriptionKey: message])
+    }
+
     // MARK: Start or restore the virtual machine.
 
     func startVirtualMachine() {
-        virtualMachine.start(completionHandler: { (result) in
-            if case let .failure(error) = result {
-                MacOSVirtualMachineConfigurationHelper.showErrorAndExit(self.virtualMachineErrorMessage(prefixKey: "Virtual machine failed to start with %@", error: error))
+        virtualMachine.start(completionHandler: { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self else {
+                    return
+                }
+
+                switch result {
+                case .success:
+                    self.presentRunningVirtualMachine()
+
+                case let .failure(error):
+                    self.handleVirtualMachineLaunchFailure(self.virtualMachineErrorMessage(prefixKey: "Virtual machine failed to start with %@", error: error))
+                }
             }
         })
     }
 
     func resumeVirtualMachine() {
-        virtualMachine.resume(completionHandler: { (result) in
-            if case let .failure(error) = result {
-                MacOSVirtualMachineConfigurationHelper.showErrorAndExit(self.virtualMachineErrorMessage(prefixKey: "Virtual machine failed to resume with %@", error: error))
+        virtualMachine.resume(completionHandler: { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self else {
+                    return
+                }
+
+                switch result {
+                case .success:
+                    self.presentRunningVirtualMachine()
+
+                case let .failure(error):
+                    self.handleVirtualMachineLaunchFailure(self.virtualMachineErrorMessage(prefixKey: "Virtual machine failed to resume with %@", error: error))
+                }
             }
         })
     }
@@ -187,11 +210,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         virtualMachine.restoreMachineStateFrom(url: saveFileURL, completionHandler: { [self] (error) in
             // Remove the saved file. Whether success or failure, the state no longer matches the VM's disk.
             let fileManager = FileManager.default
-            try! fileManager.removeItem(at: saveFileURL)
+            do {
+                try fileManager.removeItem(at: saveFileURL)
+            } catch {
+                NSLog("Failed to remove saved VM state at \(saveFileURL.path): \(error.localizedDescription)")
+            }
 
             if error == nil {
                 self.resumeVirtualMachine()
             } else {
+                NSLog("Failed to restore saved VM state; starting normally. \(error!.localizedDescription)")
                 self.startVirtualMachine()
             }
         })
@@ -216,10 +244,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 #if arch(arm64)
     private func prepareVirtualMachine() {
+        showInstallationScreen()
+
         if isVirtualMachineInstalled {
             launchVirtualMachine()
-        } else {
-            showInstallationScreen()
         }
     }
 
@@ -246,6 +274,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         appMenu.addItem(withTitle: MacOSVirtualMachineConfigurationHelper.localized("Choose Shared Folder..."),
                         action: #selector(chooseSharedFolder),
                         keyEquivalent: "")
+        appMenu.addItem(withTitle: MacOSVirtualMachineConfigurationHelper.localized("Stop VM and Show Settings..."),
+                        action: #selector(stopVirtualMachineAndShowSettings),
+                        keyEquivalent: "")
     }
 
     private var isVirtualMachineInstalled: Bool {
@@ -262,12 +293,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func launchVirtualMachine() {
-        if let originalContentView {
-            window.contentView = originalContentView
+        showVirtualMachineStartingState()
+
+        DispatchQueue.main.async { [weak self] in
+            self?.startVirtualMachineLaunch()
+        }
+    }
+
+    private func startVirtualMachineLaunch() {
+        do {
+            try createVirtualMachine()
+        } catch {
+            handleVirtualMachineLaunchFailure(error.localizedDescription)
+            return
         }
 
-        createVirtualMachine()
         virtualMachineResponder = MacOSVirtualMachineDelegate()
+        virtualMachineResponder?.didStopWithErrorHandler = { [weak self] error in
+            DispatchQueue.main.async {
+                self?.handleVirtualMachineLaunchFailure(self?.virtualMachineErrorMessage(prefixKey: "Virtual machine stopped with %@", error: error) ?? error.localizedDescription)
+            }
+        }
+        virtualMachineResponder?.guestDidStopHandler = { [weak self] in
+            DispatchQueue.main.async {
+                self?.returnToSettingsScreen()
+            }
+        }
         virtualMachine.delegate = virtualMachineResponder
         virtualMachineView.virtualMachine = virtualMachine
         virtualMachineView.capturesSystemKeys = true
@@ -287,6 +338,82 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             startVirtualMachine()
         }
+    }
+
+    private func presentRunningVirtualMachine() {
+        launchSpinner?.stopAnimation(nil)
+        launchSpinner?.isHidden = true
+
+        if let originalContentView {
+            window.contentView = originalContentView
+        }
+    }
+
+    private func showVirtualMachineStartingState() {
+        guard installButton != nil else {
+            return
+        }
+
+        installationStatusLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Starting virtual machine...")
+        installationDetailLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("VirtualiseOS is validating the VM configuration and opening the selected VM.bundle.")
+        setSetupButtonTitle(MacOSVirtualMachineConfigurationHelper.localized("Starting..."), for: installButton)
+        installButton?.isEnabled = false
+        memorySizePopUpButton?.isEnabled = false
+        vmLocationButton?.isEnabled = false
+        sharedFolderButton?.isEnabled = false
+        installationProgressIndicator?.doubleValue = 0
+        installationProgressIndicator?.isHidden = true
+        launchSpinner?.isHidden = false
+        launchSpinner?.startAnimation(nil)
+    }
+
+    private func handleVirtualMachineLaunchFailure(_ message: String) {
+        launchSpinner?.stopAnimation(nil)
+        launchSpinner?.isHidden = true
+        virtualMachineView?.virtualMachine = nil
+        virtualMachine = nil
+        virtualMachineResponder = nil
+        showInstallationScreen()
+        installationStatusLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Virtual machine failed to start")
+        installationDetailLabel?.stringValue = message
+        installationProgressIndicator?.doubleValue = 0
+        installationProgressIndicator?.isHidden = true
+        setSetupButtonTitle(MacOSVirtualMachineConfigurationHelper.localized("Retry Open VM"), for: installButton)
+        installButton?.isHidden = false
+        installButton?.isEnabled = true
+        memorySizePopUpButton?.isEnabled = true
+        vmLocationButton?.isEnabled = true
+        sharedFolderButton?.isEnabled = true
+    }
+
+    @objc private func stopVirtualMachineAndShowSettings() {
+        guard let virtualMachine else {
+            returnToSettingsScreen()
+            return
+        }
+
+        if virtualMachine.canStop {
+            virtualMachine.stop { [weak self] error in
+                DispatchQueue.main.async {
+                    if let error {
+                        self?.showInformationAlert(self?.virtualMachineErrorMessage(prefixKey: "Virtual machine failed to stop with %@", error: error) ?? error.localizedDescription)
+                        return
+                    }
+
+                    self?.returnToSettingsScreen()
+                }
+            }
+        } else {
+            showInformationAlert(MacOSVirtualMachineConfigurationHelper.localized("The virtual machine cannot be stopped while it is changing state. Try again in a moment."))
+        }
+    }
+
+    private func returnToSettingsScreen() {
+        virtualMachineView?.virtualMachine = nil
+        virtualMachine = nil
+        virtualMachineResponder = nil
+        showInstallationScreen()
+        updateSetupStateForCurrentVMLocation()
     }
 
     private func showInstallationScreen() {
@@ -326,6 +453,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         progressIndicator.doubleValue = 0
         progressIndicator.controlSize = .large
         progressIndicator.isHidden = true
+
+        let launchSpinner = NSProgressIndicator()
+        launchSpinner.style = .spinning
+        launchSpinner.controlSize = .large
+        launchSpinner.isIndeterminate = true
+        launchSpinner.isDisplayedWhenStopped = false
+        launchSpinner.isHidden = true
 
         let installButton = NSButton(title: MacOSVirtualMachineConfigurationHelper.localized("Download and Install Latest macOS"),
                                      target: self,
@@ -407,7 +541,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         sharedFolderStackView.alignment = .centerX
         sharedFolderStackView.spacing = 6
 
-        let stackView = NSStackView(views: [titleLabel, statusLabel, detailLabel, memoryStackView, vmLocationStackView, sharedFolderStackView, installButton, progressIndicator])
+        let stackView = NSStackView(views: [titleLabel, statusLabel, detailLabel, launchSpinner, memoryStackView, vmLocationStackView, sharedFolderStackView, installButton, progressIndicator])
         stackView.orientation = .vertical
         stackView.alignment = .centerX
         stackView.spacing = 18
@@ -468,6 +602,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         installationStatusLabel = statusLabel
         installationDetailLabel = detailLabel
         installationProgressIndicator = progressIndicator
+        self.launchSpinner = launchSpinner
         self.installButton = installButton
         self.memorySizePopUpButton = memorySizePopUpButton
         self.vmLocationButton = vmLocationButton
@@ -570,6 +705,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         sharedFolderButton?.isEnabled = true
         installationProgressIndicator?.doubleValue = 0
         installationProgressIndicator?.isHidden = true
+        launchSpinner?.stopAnimation(nil)
+        launchSpinner?.isHidden = true
 
         if isVirtualMachineInstalled {
             installationStatusLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is ready")
@@ -1082,6 +1219,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         restoreImageDownloadSession = nil
         installationVirtualMachine = nil
         installationVirtualMachineResponder = nil
+        launchSpinner?.stopAnimation(nil)
+        launchSpinner?.isHidden = true
         installationStatusLabel?.stringValue = MacOSVirtualMachineConfigurationHelper.localized("Installation failed")
         installationDetailLabel?.stringValue = message
         installationProgressIndicator?.doubleValue = 0

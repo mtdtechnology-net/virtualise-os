@@ -255,14 +255,17 @@ final class Coordinator: NSObject, ObservableObject {
     private func refreshProfileStatus(at index: Int) {
         let profile = virtualMachineProfiles[index]
 
-        if profile.status == .installing || profile.status == .starting || profile.status == .running {
+        if profile.status == .installing {
             return
         }
 
         if profile.isInstalledOnDisk {
-            virtualMachineProfiles[index].status = .installed
+            let staleRunningState = profile.status == .running || profile.status == .starting
+            virtualMachineProfiles[index].status = staleRunningState ? .stopped : .installed
             virtualMachineProfiles[index].installProgress = 100
-            virtualMachineProfiles[index].statusDetail = MacOSVirtualMachineConfigurationHelper.localized("Ready to start.")
+            virtualMachineProfiles[index].statusDetail = staleRunningState
+                ? MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is stopped.")
+                : MacOSVirtualMachineConfigurationHelper.localized("Ready to start.")
         } else if profile.isBundlePresentOnDisk {
             virtualMachineProfiles[index].status = .incomplete
             virtualMachineProfiles[index].installProgress = 0
@@ -276,6 +279,49 @@ final class Coordinator: NSObject, ObservableObject {
 
     var selectedVirtualMachineProfile: MachineProfile? {
         selectedProfile
+    }
+
+    var canStartSelectedProfile: Bool {
+        guard let selectedProfile else {
+            return false
+        }
+
+        return selectedProfile.status == .installed || selectedProfile.status == .stopped
+    }
+
+    var canInstallSelectedProfile: Bool {
+        guard let selectedProfile else {
+            return false
+        }
+
+        return selectedProfile.status == .notInstalled || selectedProfile.status == .incomplete || selectedProfile.status == .failed
+    }
+
+    var canStopVirtualMachine: Bool {
+        displayedVirtualMachine != nil || virtualMachine != nil || selectedProfile?.status == .running
+    }
+
+    private func markSelectedProfileStoppedIfNeeded() {
+        guard let selectedProfileIndex,
+              virtualMachineProfiles[selectedProfileIndex].status == .running || virtualMachineProfiles[selectedProfileIndex].status == .starting else {
+            return
+        }
+
+        virtualMachineProfiles[selectedProfileIndex].status = .stopped
+        virtualMachineProfiles[selectedProfileIndex].statusDetail = MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is stopped.")
+        virtualMachineProfiles[selectedProfileIndex].installProgress = 100
+        saveProfiles()
+    }
+
+    func showCreateProfileFlow() {
+        isCreatingProfile = true
+    }
+
+    func refreshVirtualMachineLibrary() {
+        refreshAllProfileStatuses()
+        activateSelectedProfile()
+        saveProfiles()
+        showInstallationScreen()
     }
 
     func createProfile(name: String,
@@ -766,6 +812,7 @@ final class Coordinator: NSObject, ObservableObject {
 
     private func returnToSettingsScreen(markAsStopped: Bool = false) {
         if markAsStopped {
+            markSelectedProfileStoppedIfNeeded()
             updateSelectedProfile(status: .stopped,
                                   detail: MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is stopped."),
                                   progress: 100)
@@ -1628,7 +1675,8 @@ final class Coordinator: NSObject, ObservableObject {
 
         if #available(macOS 14.0, *) {
             if virtualMachine?.state == .running {
-                pauseAndSaveVirtualMachine(completionHandler: {
+                pauseAndSaveVirtualMachine(completionHandler: { [weak self] in
+                    self?.markSelectedProfileStoppedIfNeeded()
                     sender.reply(toApplicationShouldTerminate: true)
                 })
 
@@ -1637,6 +1685,7 @@ final class Coordinator: NSObject, ObservableObject {
         }
 #endif
 
+        markSelectedProfileStoppedIfNeeded()
         return .terminateNow
     }
 }

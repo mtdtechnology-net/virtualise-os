@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- Fixed generic macOS archives by keeping `VZMacOSInstaller` storage behind the Apple-silicon-only compilation guard.
 - Removed an extra trailing newline from `RootView.swift` so SwiftLint can pass with the current configuration.
 
 ---

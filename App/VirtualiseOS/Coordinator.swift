@@ -73,7 +73,9 @@ final class Coordinator: NSObject, ObservableObject {
     private var restoreImageDownloadSession: URLSession?
     private var installationVirtualMachineResponder: MacOSVirtualMachineDelegate?
     private var installationVirtualMachine: VZVirtualMachine?
+#if arch(arm64)
     private var macOSInstaller: VZMacOSInstaller?
+#endif
     private var isInstallationInProgress = false
     private var isCancellingInstallation = false
     private var didPrepareVirtualMachine = false
@@ -301,7 +303,11 @@ final class Coordinator: NSObject, ObservableObject {
     }
 
     var canCancelSelectedProfileInstallation: Bool {
+#if arch(arm64)
         selectedProfile?.status == .installing || isInstallationInProgress || restoreImageDownloadTask != nil || macOSInstaller != nil || installationProcess != nil
+#else
+        selectedProfile?.status == .installing || isInstallationInProgress || restoreImageDownloadTask != nil || installationProcess != nil
+#endif
     }
 
     var canDeleteSelectedProfile: Bool {

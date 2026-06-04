@@ -102,7 +102,9 @@ final class Coordinator: NSObject, ObservableObject {
             saveProfiles()
         }
 
+#if arch(arm64)
         reconnectBackgroundRestoreImageDownloadIfNeeded()
+#endif
     }
 
     private static func loadLegacyProfiles() -> [MachineProfile] {
@@ -199,9 +201,22 @@ final class Coordinator: NSObject, ObservableObject {
         }
     }
 
+    private static func savedMemorySizeInGiB() -> Int {
+        let savedMemorySizeInGiB = UserDefaults.standard.integer(forKey: MacOSVirtualMachineConfigurationHelper.memorySizeInGiBUserDefaultsKey)
+        return savedMemorySizeInGiB > 0 ? savedMemorySizeInGiB : MacOSVirtualMachineConfigurationHelper.defaultMemorySizeInGiB
+    }
+
+    private static func normalizedVMLocation(_ url: URL) -> URL {
+        if url.lastPathComponent == "VM.bundle" || url.pathExtension == "bundle" {
+            return url
+        }
+
+        return url.appendingPathComponent("VM.bundle", isDirectory: true)
+    }
+
     private func createDefaultProfileIfNeeded() {
         let profile = MachineProfile(name: MacOSVirtualMachineConfigurationHelper.localized("Primary VM"),
-                                            memorySizeInGiB: selectedMemorySizeInGiB(),
+                                            memorySizeInGiB: Self.savedMemorySizeInGiB(),
                                             diskSizeInGiB: Int(defaultDiskImageSizeInGiB),
                                             vmBundlePath: vmBundleURL.path,
                                             status: .notInstalled)
@@ -269,14 +284,14 @@ final class Coordinator: NSObject, ObservableObject {
                        memorySizeInGiB: Int,
                        diskSizeInGiB: Int) {
         do {
-            let normalizedURL = normalizedSelectedVMLocation(vmBundleURL)
+            let normalizedURL = Self.normalizedVMLocation(vmBundleURL)
             if !FileManager.default.fileExists(atPath: normalizedURL.path) {
                 try FileManager.default.createDirectory(at: normalizedURL, withIntermediateDirectories: true)
             }
-            let vmBookmarkData = try normalizedURL.bookmarkData(options: [.withSecurityScope],
+            let vmBookmarkData = try normalizedURL.bookmarkData(options: URL.BookmarkCreationOptions.withSecurityScope,
                                                                 includingResourceValuesForKeys: nil,
                                                                 relativeTo: nil)
-            let sharedBookmarkData = try sharedFolderURL?.bookmarkData(options: [.withSecurityScope],
+            let sharedBookmarkData = try sharedFolderURL?.bookmarkData(options: URL.BookmarkCreationOptions.withSecurityScope,
                                                                        includingResourceValuesForKeys: nil,
                                                                        relativeTo: nil)
             let profileName = name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -405,6 +420,16 @@ final class Coordinator: NSObject, ObservableObject {
             UserDefaults.standard.removeObject(forKey: MacOSVirtualMachineConfigurationHelper.sharedDirectoryBookmarkUserDefaultsKey)
         }
     }
+
+#if !arch(arm64)
+    private func showInstallationScreen() {}
+
+    private func updateSetupStateForCurrentVMLocation() {}
+
+    private func showInformationAlert(_ message: String) {
+        NSLog(message)
+    }
+#endif
 
     // MARK: Create the Mac platform configuration.
 

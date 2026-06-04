@@ -52,6 +52,7 @@ struct MacOSVirtualMachineConfigurationHelper {
         exit(EXIT_FAILURE)
     }
 
+#if arch(arm64)
     static func computeCPUCount() -> Int {
         let totalAvailableCPUs = ProcessInfo.processInfo.processorCount
         var virtualCPUCount = totalAvailableCPUs <= 1 ? 1 : totalAvailableCPUs - 1
@@ -186,5 +187,6 @@ struct MacOSVirtualMachineConfigurationHelper {
             return VZUSBKeyboardConfiguration()
         }
     }
+#endif
 }
 

@@ -7,10 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1B157DA42FD0409800256E27 /* SetupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B157DA32FD0409800256E27 /* SetupViewModel.swift */; };
+		1B157DA72FD040A000256E27 /* VirtualiseOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B157DA62FD040A000256E27 /* VirtualiseOSApp.swift */; };
+		1B157DA92FD0530000256E27 /* Coordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B157DA82FD0530000256E27 /* Coordinator.swift */; };
+		1B157DAB2FD0530100256E27 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B157DAA2FD0530100256E27 /* RootView.swift */; };
+		1B157DAD2FD0530200256E27 /* DisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B157DAC2FD0530200256E27 /* DisplayView.swift */; };
+		1B157DAF2FD0530300256E27 /* AppCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B157DAE2FD0530300256E27 /* AppCommands.swift */; };
+		1B2FC7782FD1692D00F35C41 /* SetupButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B2FC7772FD1692B00F35C41 /* SetupButtonStyle.swift */; };
+		1B7C2B5D2FD171E2000F0DB2 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B7C2B5C2FD171E2000F0DB2 /* SetupView.swift */; };
+		1B7C2B5F2FD1783B000F0DB2 /* MachineProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B7C2B5E2FD1783B000F0DB2 /* MachineProfile.swift */; };
+		1B7C2B612FD17969000F0DB2 /* VirtualMachineLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B7C2B602FD17969000F0DB2 /* VirtualMachineLibraryView.swift */; };
+		1B7C2B632FD17977000F0DB2 /* VirtualMachineWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B7C2B622FD17977000F0DB2 /* VirtualMachineWindowView.swift */; };
 		1B93CCAC2FB75E5800994330 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1B93CCAB2FB75E5800994330 /* Localizable.xcstrings */; };
+		1BE85EF32FD1B79A00FA686B /* BundleStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE85EF22FD1B79300FA686B /* BundleStatus.swift */; };
+		1BE85EF52FD1B7EC00FA686B /* ProfileRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE85EF42FD1B7EA00FA686B /* ProfileRecord.swift */; };
 		8F87D52126C34111000EADA4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D52026C34111000EADA4 /* AppDelegate.swift */; };
 		8F87D52326C34111000EADA4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8F87D52226C34111000EADA4 /* Assets.xcassets */; };
-		8F87D52626C34111000EADA4 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 8F87D52426C34111000EADA4 /* MainMenu.xib */; };
 		8F87D53426C341AC000EADA4 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D53326C341AC000EADA4 /* main.swift */; };
 		8F87D53A26C3423F000EADA4 /* MacOSVirtualMachineInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D53926C3423F000EADA4 /* MacOSVirtualMachineInstaller.swift */; };
 		8F87D53F26C34259000EADA4 /* Path.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D53C26C34259000EADA4 /* Path.swift */; };
@@ -38,7 +50,20 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1B157DA32FD0409800256E27 /* SetupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupViewModel.swift; sourceTree = "<group>"; };
+		1B157DA62FD040A000256E27 /* VirtualiseOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualiseOSApp.swift; sourceTree = "<group>"; };
+		1B157DA82FD0530000256E27 /* Coordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coordinator.swift; sourceTree = "<group>"; };
+		1B157DAA2FD0530100256E27 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		1B157DAC2FD0530200256E27 /* DisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayView.swift; sourceTree = "<group>"; };
+		1B157DAE2FD0530300256E27 /* AppCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCommands.swift; sourceTree = "<group>"; };
+		1B2FC7772FD1692B00F35C41 /* SetupButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupButtonStyle.swift; sourceTree = "<group>"; };
+		1B7C2B5C2FD171E2000F0DB2 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
+		1B7C2B5E2FD1783B000F0DB2 /* MachineProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachineProfile.swift; sourceTree = "<group>"; };
+		1B7C2B602FD17969000F0DB2 /* VirtualMachineLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualMachineLibraryView.swift; sourceTree = "<group>"; };
+		1B7C2B622FD17977000F0DB2 /* VirtualMachineWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualMachineWindowView.swift; sourceTree = "<group>"; };
 		1B93CCAB2FB75E5800994330 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		1BE85EF22FD1B79300FA686B /* BundleStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleStatus.swift; sourceTree = "<group>"; };
+		1BE85EF42FD1B7EA00FA686B /* ProfileRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRecord.swift; sourceTree = "<group>"; };
 		8F87D51D26C34111000EADA4 /* VirtualiseOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtualiseOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8F87D52026C34111000EADA4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		8F87D52226C34111000EADA4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -88,6 +113,31 @@
 			path = .;
 			sourceTree = "<group>";
 		};
+		1B2FC7742FD168FF00F35C41 /* Setup */ = {
+			isa = PBXGroup;
+			children = (
+				1B157DA32FD0409800256E27 /* SetupViewModel.swift */,
+				1B7C2B5C2FD171E2000F0DB2 /* SetupView.swift */,
+			);
+			path = Setup;
+			sourceTree = "<group>";
+		};
+		1B2FC7752FD1691200F35C41 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				1B2FC7762FD1692300F35C41 /* Reusable */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		1B2FC7762FD1692300F35C41 /* Reusable */ = {
+			isa = PBXGroup;
+			children = (
+				1B2FC7772FD1692B00F35C41 /* SetupButtonStyle.swift */,
+			);
+			path = Reusable;
+			sourceTree = "<group>";
+		};
 		3026A0D16D3A077128FE4194 /* Configuration */ = {
 			isa = PBXGroup;
 			children = (
@@ -102,7 +152,7 @@
 				8F87D54D26C344C4000EADA4 /* README.md */,
 				8F87D53B26C34250000EADA4 /* VirtualiseOS.entitlements */,
 				8F87D53826C3423F000EADA4 /* InstallationTool.entitlements */,
-				8FDABC17270D0F9100D7FC60 /* Swift */,
+				8FDABC17270D0F9100D7FC60 /* App */,
 				8F87D51E26C34111000EADA4 /* Products */,
 				8F87D54526C3427C000EADA4 /* Frameworks */,
 				3026A0D16D3A077128FE4194 /* Configuration */,
@@ -122,11 +172,23 @@
 		8F87D51F26C34111000EADA4 /* VirtualiseOS */ = {
 			isa = PBXGroup;
 			children = (
+				1B2FC7752FD1691200F35C41 /* Views */,
 				8F87D52026C34111000EADA4 /* AppDelegate.swift */,
 				8F87D52226C34111000EADA4 /* Assets.xcassets */,
 				8F87D52426C34111000EADA4 /* MainMenu.xib */,
 				8FB90BE826D422FD00988F51 /* Info.plist */,
 				1B93CCAB2FB75E5800994330 /* Localizable.xcstrings */,
+				1B2FC7742FD168FF00F35C41 /* Setup */,
+				1B157DA62FD040A000256E27 /* VirtualiseOSApp.swift */,
+				1B157DAE2FD0530300256E27 /* AppCommands.swift */,
+				1B157DAA2FD0530100256E27 /* RootView.swift */,
+				1B157DAC2FD0530200256E27 /* DisplayView.swift */,
+				1B157DA82FD0530000256E27 /* Coordinator.swift */,
+				1B7C2B5E2FD1783B000F0DB2 /* MachineProfile.swift */,
+				1BE85EF42FD1B7EA00FA686B /* ProfileRecord.swift */,
+				1BE85EF22FD1B79300FA686B /* BundleStatus.swift */,
+				1B7C2B602FD17969000F0DB2 /* VirtualMachineLibraryView.swift */,
+				1B7C2B622FD17977000F0DB2 /* VirtualMachineWindowView.swift */,
 			);
 			path = VirtualiseOS;
 			sourceTree = "<group>";
@@ -159,14 +221,14 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		8FDABC17270D0F9100D7FC60 /* Swift */ = {
+		8FDABC17270D0F9100D7FC60 /* App */ = {
 			isa = PBXGroup;
 			children = (
 				8F87D52C26C3418F000EADA4 /* Common */,
 				8F87D51F26C34111000EADA4 /* VirtualiseOS */,
 				8F87D53226C341AC000EADA4 /* InstallationTool */,
 			);
-			path = Swift;
+			path = App;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -257,7 +319,6 @@
 			files = (
 				8F87D54E26C344C4000EADA4 /* README.md in Resources */,
 				8F87D52326C34111000EADA4 /* Assets.xcassets in Resources */,
-				8F87D52626C34111000EADA4 /* MainMenu.xib in Resources */,
 				1B93CCAC2FB75E5800994330 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -269,9 +330,22 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1BE85EF52FD1B7EC00FA686B /* ProfileRecord.swift in Sources */,
 				8F87D53F26C34259000EADA4 /* Path.swift in Sources */,
 				8F87D52126C34111000EADA4 /* AppDelegate.swift in Sources */,
+				1B2FC7782FD1692D00F35C41 /* SetupButtonStyle.swift in Sources */,
 				8F87D54126C34259000EADA4 /* MacOSVirtualMachineDelegate.swift in Sources */,
+				1B157DA42FD0409800256E27 /* SetupViewModel.swift in Sources */,
+				1B7C2B5F2FD1783B000F0DB2 /* MachineProfile.swift in Sources */,
+				1B157DA72FD040A000256E27 /* VirtualiseOSApp.swift in Sources */,
+				1B7C2B632FD17977000F0DB2 /* VirtualMachineWindowView.swift in Sources */,
+				1B157DAF2FD0530300256E27 /* AppCommands.swift in Sources */,
+				1B157DAB2FD0530100256E27 /* RootView.swift in Sources */,
+				1B157DAD2FD0530200256E27 /* DisplayView.swift in Sources */,
+				1BE85EF32FD1B79A00FA686B /* BundleStatus.swift in Sources */,
+				1B157DA92FD0530000256E27 /* Coordinator.swift in Sources */,
+				1B7C2B5D2FD171E2000F0DB2 /* SetupView.swift in Sources */,
+				1B7C2B612FD17969000F0DB2 /* VirtualMachineLibraryView.swift in Sources */,
 				8F87D54026C34259000EADA4 /* MacOSVirtualMachineConfigurationHelper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -441,7 +515,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				ENABLE_APP_SANDBOX = NO;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
@@ -455,7 +529,6 @@
 				INFOPLIST_FILE = Swift/VirtualiseOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Virtualize;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMainNibFile = MainMenu;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Allow for using audio input devices.";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -491,7 +564,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				ENABLE_APP_SANDBOX = NO;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
@@ -505,7 +578,6 @@
 				INFOPLIST_FILE = Swift/VirtualiseOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Virtualize;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMainNibFile = MainMenu;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Allow for using audio input devices.";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (

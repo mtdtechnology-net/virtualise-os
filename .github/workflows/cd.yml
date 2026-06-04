@@ -1,0 +1,227 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force_version:
+        description: "Force specific version, without v prefix. Leave empty for auto-increment"
+        required: false
+        type: string
+
+env:
+  APP_NAME: VirtualiseOS
+  PROJECT: VirtualiseOS.xcodeproj
+  SCHEME: VirtualiseOS-Swift
+  CONFIGURATION: Release
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  version:
+    name: Calculate Version
+    runs-on: mac-mini
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      is_release: ${{ steps.version.outputs.is_release }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest SemVer tag
+        id: get_tag
+        run: |
+          LATEST_TAG=$(git describe --tags --match "v[0-9]*.[0-9]*.[0-9]*" --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest_tag=${LATEST_TAG}" >> "$GITHUB_OUTPUT"
+          echo "Latest tag: ${LATEST_TAG}"
+
+      - name: Calculate next version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          FORCE_VERSION: ${{ github.event.inputs.force_version }}
+        run: |
+          if [ -n "$FORCE_VERSION" ]; then
+            NEW_VERSION="${FORCE_VERSION#v}"
+            if ! echo "$NEW_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "::error::force_version must look like 1.2.3"
+              exit 1
+            fi
+
+            IS_RELEASE="false"
+            if [ "$EVENT_NAME" = "release" ]; then
+              IS_RELEASE="true"
+            fi
+
+            echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+            echo "tag=v${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+            echo "is_release=${IS_RELEASE}" >> "$GITHUB_OUTPUT"
+            echo "Forced version: ${NEW_VERSION}"
+            exit 0
+          fi
+
+          LATEST_TAG="${{ steps.get_tag.outputs.latest_tag }}"
+          VERSION="${LATEST_TAG#v}"
+
+          IFS='.' read -r MAJOR MINOR PATCH <<EOF
+          $VERSION
+          EOF
+
+          MAJOR=${MAJOR:-0}
+          MINOR=${MINOR:-0}
+          PATCH=${PATCH:-0}
+          IS_RELEASE="false"
+
+          if [ "$EVENT_NAME" = "release" ]; then
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+            IS_RELEASE="true"
+          else
+            COMMIT_MSG="$(git log -1 --pretty=%B)"
+            if echo "$COMMIT_MSG" | grep -Eq '^feat(\(.+\))?!?:'; then
+              MINOR=$((MINOR + 1))
+              PATCH=0
+            else
+              PATCH=$((PATCH + 1))
+            fi
+          fi
+
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "is_release=${IS_RELEASE}" >> "$GITHUB_OUTPUT"
+          echo "New version: ${NEW_VERSION}"
+
+  build:
+    name: Build macOS DMG
+    runs-on: mac-mini
+    needs: version
+    timeout-minutes: 30
+    outputs:
+      dmg_name: ${{ steps.package.outputs.dmg_name }}
+      dmg_path: ${{ steps.package.outputs.dmg_path }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Archive app
+        env:
+          ARCHIVE_PATH: ${{ runner.temp }}/VirtualiseOS.xcarchive
+          DERIVED_DATA_PATH: ${{ runner.temp }}/VirtualiseOSDerivedData
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          xcodebuild \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -configuration "$CONFIGURATION" \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath "$DERIVED_DATA_PATH" \
+            -archivePath "$ARCHIVE_PATH" \
+            CODE_SIGNING_ALLOWED=NO \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
+            ARCHS=arm64 \
+            archive
+
+      - name: Package DMG
+        id: package
+        env:
+          ARCHIVE_PATH: ${{ runner.temp }}/VirtualiseOS.xcarchive
+          DMG_ROOT: ${{ runner.temp }}/dmg-root
+          DIST_DIR: ${{ runner.temp }}/dist
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          APP_PATH="$ARCHIVE_PATH/Products/Applications/$APP_NAME.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "::error::Archived app not found at $APP_PATH"
+            exit 1
+          fi
+
+          codesign --force --deep --sign - --entitlements VirtualiseOS.entitlements "$APP_PATH"
+          codesign --verify --deep --strict "$APP_PATH"
+
+          DMG_NAME="$APP_NAME-$VERSION-arm64.dmg"
+          DMG_PATH="$DIST_DIR/$DMG_NAME"
+
+          rm -rf "$DMG_ROOT" "$DIST_DIR"
+          mkdir -p "$DMG_ROOT" "$DIST_DIR"
+          cp -R "$APP_PATH" "$DMG_ROOT/"
+          ln -s /Applications "$DMG_ROOT/Applications"
+
+          hdiutil create \
+            -volname "$APP_NAME $VERSION" \
+            -srcfolder "$DMG_ROOT" \
+            -ov \
+            -format UDZO \
+            "$DMG_PATH"
+
+          echo "dmg_name=$DMG_NAME" >> "$GITHUB_OUTPUT"
+          echo "dmg_path=$DMG_PATH" >> "$GITHUB_OUTPUT"
+          ls -lh "$DMG_PATH"
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.dmg_name }}
+          path: ${{ steps.package.outputs.dmg_path }}
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    runs-on: mac-mini
+    needs: [version, build]
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download DMG artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.dmg_name }}
+          path: ${{ runner.temp }}/release-assets
+
+      - name: Create GitHub release and upload DMG
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.version.outputs.tag }}
+          VERSION: ${{ needs.version.outputs.version }}
+          DMG_NAME: ${{ needs.build.outputs.dmg_name }}
+        run: |
+          DMG_PATH="$RUNNER_TEMP/release-assets/$DMG_NAME"
+          if [ ! -f "$DMG_PATH" ]; then
+            echo "::error::DMG not found at $DMG_PATH"
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --tags origin | grep -q "refs/tags/${TAG}$"; then
+            echo "::error::Tag ${TAG} already exists. Use workflow_dispatch with a higher force_version."
+            exit 1
+          fi
+
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+
+          gh release create "$TAG" "$DMG_PATH" \
+            --title "$APP_NAME $VERSION" \
+            --notes "Release $TAG"

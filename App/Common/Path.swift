@@ -17,6 +17,10 @@ private let defaultApplicationSupportURL = FileManager.default
 
 private var activeVMBundleURL: URL?
 
+func setActiveVMBundleURL(_ url: URL?) {
+    activeVMBundleURL = url
+}
+
 var applicationSupportURL: URL {
     if let selectedVMBundleURL {
         return selectedVMBundleURL.deletingLastPathComponent()

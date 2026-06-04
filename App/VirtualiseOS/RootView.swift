@@ -32,7 +32,7 @@ struct RootView: View {
                     Color.white.ignoresSafeArea()
                     Text("VirtualiseOS requires Apple silicon.")
                         .font(.system(size: 17, weight: .medium))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.white)
                 }
 #endif
             }
@@ -76,7 +76,7 @@ struct RootView: View {
 private struct SplashScreenView: View {
     var body: some View {
         ZStack {
-            Color.white.ignoresSafeArea()
+            Color.accentColor.ignoresSafeArea()
 
             VStack(spacing: 22) {
                 Image("logo")
@@ -86,7 +86,7 @@ private struct SplashScreenView: View {
 
                 Text("VirtualiseOS")
                     .font(.system(size: 34, weight: .semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
 
                 ProgressView()
                     .controlSize(.large)

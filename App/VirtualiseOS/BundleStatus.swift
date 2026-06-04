@@ -19,21 +19,21 @@ enum BundleStatus: String, Codable, CaseIterable {
     var displayName: String {
         switch self {
         case .notInstalled:
-            return MacOSVirtualMachineConfigurationHelper.localized("Not installed")
+            return MachineConfigurationHelper.localized("Not installed")
         case .incomplete:
-            return MacOSVirtualMachineConfigurationHelper.localized("Incomplete")
+            return MachineConfigurationHelper.localized("Incomplete")
         case .installing:
-            return MacOSVirtualMachineConfigurationHelper.localized("Installing")
+            return MachineConfigurationHelper.localized("Installing")
         case .installed:
-            return MacOSVirtualMachineConfigurationHelper.localized("Ready")
+            return MachineConfigurationHelper.localized("Ready")
         case .starting:
-            return MacOSVirtualMachineConfigurationHelper.localized("Starting")
+            return MachineConfigurationHelper.localized("Starting")
         case .running:
-            return MacOSVirtualMachineConfigurationHelper.localized("Running")
+            return MachineConfigurationHelper.localized("Running")
         case .stopped:
-            return MacOSVirtualMachineConfigurationHelper.localized("Stopped")
+            return MachineConfigurationHelper.localized("Stopped")
         case .failed:
-            return MacOSVirtualMachineConfigurationHelper.localized("Failed")
+            return MachineConfigurationHelper.localized("Failed")
         }
     }
 }

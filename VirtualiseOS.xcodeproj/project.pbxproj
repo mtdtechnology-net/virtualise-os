@@ -26,11 +26,11 @@
 		8F87D53426C341AC000EADA4 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D53326C341AC000EADA4 /* main.swift */; };
 		8F87D53A26C3423F000EADA4 /* MacOSVirtualMachineInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D53926C3423F000EADA4 /* MacOSVirtualMachineInstaller.swift */; };
 		8F87D53F26C34259000EADA4 /* Path.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D53C26C34259000EADA4 /* Path.swift */; };
-		8F87D54026C34259000EADA4 /* MacOSVirtualMachineConfigurationHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D53D26C34259000EADA4 /* MacOSVirtualMachineConfigurationHelper.swift */; };
+		8F87D54026C34259000EADA4 /* MachineConfigurationHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D53D26C34259000EADA4 /* MachineConfigurationHelper.swift */; };
 		8F87D54126C34259000EADA4 /* MacOSVirtualMachineDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D53E26C34259000EADA4 /* MacOSVirtualMachineDelegate.swift */; };
 		8F87D54226C34262000EADA4 /* Path.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D53C26C34259000EADA4 /* Path.swift */; };
 		8F87D54326C34265000EADA4 /* MacOSVirtualMachineDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D53E26C34259000EADA4 /* MacOSVirtualMachineDelegate.swift */; };
-		8F87D54426C34269000EADA4 /* MacOSVirtualMachineConfigurationHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D53D26C34259000EADA4 /* MacOSVirtualMachineConfigurationHelper.swift */; };
+		8F87D54426C34269000EADA4 /* MachineConfigurationHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D53D26C34259000EADA4 /* MachineConfigurationHelper.swift */; };
 		8F87D54726C3427C000EADA4 /* Virtualization.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F87D54626C3427C000EADA4 /* Virtualization.framework */; };
 		8F87D54826C34286000EADA4 /* Virtualization.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F87D54626C3427C000EADA4 /* Virtualization.framework */; };
 		8F87D54E26C344C4000EADA4 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 8F87D54D26C344C4000EADA4 /* README.md */; };
@@ -74,7 +74,7 @@
 		8F87D53926C3423F000EADA4 /* MacOSVirtualMachineInstaller.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MacOSVirtualMachineInstaller.swift; sourceTree = "<group>"; };
 		8F87D53B26C34250000EADA4 /* VirtualiseOS.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = VirtualiseOS.entitlements; sourceTree = "<group>"; };
 		8F87D53C26C34259000EADA4 /* Path.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Path.swift; sourceTree = "<group>"; };
-		8F87D53D26C34259000EADA4 /* MacOSVirtualMachineConfigurationHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MacOSVirtualMachineConfigurationHelper.swift; sourceTree = "<group>"; };
+		8F87D53D26C34259000EADA4 /* MachineConfigurationHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MachineConfigurationHelper.swift; sourceTree = "<group>"; };
 		8F87D53E26C34259000EADA4 /* MacOSVirtualMachineDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MacOSVirtualMachineDelegate.swift; sourceTree = "<group>"; };
 		8F87D54626C3427C000EADA4 /* Virtualization.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Virtualization.framework; path = System/Library/Frameworks/Virtualization.framework; sourceTree = SDKROOT; };
 		8F87D54D26C344C4000EADA4 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -196,7 +196,7 @@
 		8F87D52C26C3418F000EADA4 /* Common */ = {
 			isa = PBXGroup;
 			children = (
-				8F87D53D26C34259000EADA4 /* MacOSVirtualMachineConfigurationHelper.swift */,
+				8F87D53D26C34259000EADA4 /* MachineConfigurationHelper.swift */,
 				8F87D53E26C34259000EADA4 /* MacOSVirtualMachineDelegate.swift */,
 				8F87D53C26C34259000EADA4 /* Path.swift */,
 			);
@@ -346,7 +346,7 @@
 				1B157DA92FD0530000256E27 /* Coordinator.swift in Sources */,
 				1B7C2B5D2FD171E2000F0DB2 /* SetupView.swift in Sources */,
 				1B7C2B612FD17969000F0DB2 /* VirtualMachineLibraryView.swift in Sources */,
-				8F87D54026C34259000EADA4 /* MacOSVirtualMachineConfigurationHelper.swift in Sources */,
+				8F87D54026C34259000EADA4 /* MachineConfigurationHelper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -354,7 +354,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8F87D54426C34269000EADA4 /* MacOSVirtualMachineConfigurationHelper.swift in Sources */,
+				8F87D54426C34269000EADA4 /* MachineConfigurationHelper.swift in Sources */,
 				8F87D53A26C3423F000EADA4 /* MacOSVirtualMachineInstaller.swift in Sources */,
 				8FB90BEE26D5AC8100988F51 /* MacOSRestoreImage.swift in Sources */,
 				8F87D54226C34262000EADA4 /* Path.swift in Sources */,
@@ -528,7 +528,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = App/VirtualiseOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Virtualize;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "M.T.D.TECHNOLOGY SRL";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Allow for using audio input devices.";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -577,7 +579,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = App/VirtualiseOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Virtualize;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "M.T.D.TECHNOLOGY SRL";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Allow for using audio input devices.";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (

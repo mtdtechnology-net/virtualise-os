@@ -26,7 +26,7 @@ struct VirtualMachineWindowView: View {
                         .controlSize(.large)
                         .tint(.white)
 
-                    Text(MacOSVirtualMachineConfigurationHelper.localized("Opening virtual machine..."))
+                    Text(MachineConfigurationHelper.localized("Opening virtual machine..."))
                         .foregroundStyle(.white)
                 }
             }
@@ -36,7 +36,7 @@ struct VirtualMachineWindowView: View {
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button(MacOSVirtualMachineConfigurationHelper.localized("Stop VM")) {
+                Button(MachineConfigurationHelper.localized("Stop VM")) {
                     coordinator.stopVirtualMachineAndShowSettings()
                 }
                 .disabled(coordinator.displayedVirtualMachine == nil)

@@ -20,12 +20,15 @@ final class SetupViewModel: ObservableObject {
     @Published var areControlsEnabled = true
     @Published var isLaunchSpinnerVisible = false
     @Published var isProgressVisible = false
+    @Published var isCancelActionVisible = false
+    @Published var isCancelActionEnabled = false
     @Published var progress = 0.0
     @Published var selectedMemorySizeInGiB: Int
     @Published var vmLocationDescription: String
     @Published var sharedFolderDescription: String
 
     var actionHandler: (() -> Void)?
+    var cancelActionHandler: (() -> Void)?
     var chooseVMLocationHandler: (() -> Void)?
     var chooseSharedFolderHandler: (() -> Void)?
     var memorySelectionHandler: ((Int) -> Void)?

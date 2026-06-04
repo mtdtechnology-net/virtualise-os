@@ -17,7 +17,7 @@ struct SetupView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 18) {
-                Text(MacOSVirtualMachineConfigurationHelper.localized("Preparing VirtualiseOS"))
+                Text(MachineConfigurationHelper.localized("Preparing VirtualiseOS"))
                     .font(.system(size: 30, weight: .semibold))
                     .foregroundStyle(.white)
                 
@@ -41,12 +41,24 @@ struct SetupView: View {
                 
                 settingsRows
                 
-                if !model.isActionHidden {
-                    Button(model.actionTitle) {
-                        model.actionHandler?()
+                if !model.isActionHidden || model.isCancelActionVisible {
+                    HStack(spacing: 12) {
+                        if !model.isActionHidden {
+                            Button(model.actionTitle) {
+                                model.actionHandler?()
+                            }
+                            .buttonStyle(SetupButtonStyle())
+                            .disabled(!model.isActionEnabled)
+                        }
+
+                        if model.isCancelActionVisible {
+                            Button(MachineConfigurationHelper.localized("Cancel Installing")) {
+                                model.cancelActionHandler?()
+                            }
+                            .buttonStyle(SetupButtonStyle())
+                            .disabled(!model.isCancelActionEnabled)
+                        }
                     }
-                    .buttonStyle(SetupButtonStyle())
-                    .disabled(!model.isActionEnabled)
                     .frame(minWidth: 260, minHeight: 36)
                 }
                 
@@ -80,7 +92,7 @@ struct SetupView: View {
     private var settingsRows: some View {
         VStack(spacing: 16) {
             HStack {
-                Text(MacOSVirtualMachineConfigurationHelper.localized("Memory"))
+                Text(MachineConfigurationHelper.localized("Memory"))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white)
                 
@@ -88,7 +100,7 @@ struct SetupView: View {
                 
                 Picker("", selection: $model.selectedMemorySizeInGiB) {
                     ForEach(model.memoryOptionsInGiB, id: \.self) { memorySizeInGiB in
-                        Text(MacOSVirtualMachineConfigurationHelper.localized("%d GB", memorySizeInGiB))
+                        Text(MachineConfigurationHelper.localized("%d GB", memorySizeInGiB))
                             .tag(memorySizeInGiB)
                     }
                 }
@@ -101,11 +113,11 @@ struct SetupView: View {
             }
             .frame(width: 420)
             
-            setupLocationRow(title: MacOSVirtualMachineConfigurationHelper.localized("VM Location"),
+            setupLocationRow(title: MachineConfigurationHelper.localized("VM Location"),
                              path: model.vmLocationDescription,
                              action: { model.chooseVMLocationHandler?() })
             
-            setupLocationRow(title: MacOSVirtualMachineConfigurationHelper.localized("Shared Folder"),
+            setupLocationRow(title: MachineConfigurationHelper.localized("Shared Folder"),
                              path: model.sharedFolderDescription,
                              action: { model.chooseSharedFolderHandler?() })
         }
@@ -120,7 +132,7 @@ struct SetupView: View {
                 
                 Spacer()
                 
-                Button(MacOSVirtualMachineConfigurationHelper.localized("Choose Folder..."), action: action)
+                Button(MachineConfigurationHelper.localized("Choose Folder..."), action: action)
                     .buttonStyle(SetupButtonStyle())
                     .disabled(!model.areControlsEnabled)
                     .frame(width: 168, height: 34)

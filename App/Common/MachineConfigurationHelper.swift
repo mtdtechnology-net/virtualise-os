@@ -1,5 +1,5 @@
 //
-//  MacOSVirtualMachineConfigurationHelper.swift
+//  MachineConfigurationHelper.swift
 //  VirtualiseOS
 //
 //  Created by Daniel Mandea on 15.05.2025.
@@ -12,7 +12,7 @@ import AppKit
 #endif
 import Virtualization
 
-struct MacOSVirtualMachineConfigurationHelper {
+struct MachineConfigurationHelper {
     static let memorySizeInGiBUserDefaultsKey = "VirtualMachineMemorySizeInGiB"
     static let sharedDirectoryBookmarkUserDefaultsKey = "SharedDirectoryBookmark"
     static let defaultMemorySizeInGiB = 4

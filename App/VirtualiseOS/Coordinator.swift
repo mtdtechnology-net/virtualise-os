@@ -72,7 +72,9 @@ final class Coordinator: NSObject, ObservableObject {
     private var restoreImageDownloadSession: URLSession?
     private var installationVirtualMachineResponder: MacOSVirtualMachineDelegate?
     private var installationVirtualMachine: VZVirtualMachine?
+    private var macOSInstaller: VZMacOSInstaller?
     private var isInstallationInProgress = false
+    private var isCancellingInstallation = false
     private var didPrepareVirtualMachine = false
 
     private let defaultDiskImageSizeInGiB: UInt64 = 128
@@ -202,8 +204,8 @@ final class Coordinator: NSObject, ObservableObject {
     }
 
     private static func savedMemorySizeInGiB() -> Int {
-        let savedMemorySizeInGiB = UserDefaults.standard.integer(forKey: MacOSVirtualMachineConfigurationHelper.memorySizeInGiBUserDefaultsKey)
-        return savedMemorySizeInGiB > 0 ? savedMemorySizeInGiB : MacOSVirtualMachineConfigurationHelper.defaultMemorySizeInGiB
+        let savedMemorySizeInGiB = UserDefaults.standard.integer(forKey: MachineConfigurationHelper.memorySizeInGiBUserDefaultsKey)
+        return savedMemorySizeInGiB > 0 ? savedMemorySizeInGiB : MachineConfigurationHelper.defaultMemorySizeInGiB
     }
 
     private static func normalizedVMLocation(_ url: URL) -> URL {
@@ -215,7 +217,7 @@ final class Coordinator: NSObject, ObservableObject {
     }
 
     private func createDefaultProfileIfNeeded() {
-        let profile = MachineProfile(name: MacOSVirtualMachineConfigurationHelper.localized("Primary VM"),
+        let profile = MachineProfile(name: MachineConfigurationHelper.localized("Primary VM"),
                                             memorySizeInGiB: Self.savedMemorySizeInGiB(),
                                             diskSizeInGiB: Int(defaultDiskImageSizeInGiB),
                                             vmBundlePath: vmBundleURL.path,
@@ -264,16 +266,16 @@ final class Coordinator: NSObject, ObservableObject {
             virtualMachineProfiles[index].status = staleRunningState ? .stopped : .installed
             virtualMachineProfiles[index].installProgress = 100
             virtualMachineProfiles[index].statusDetail = staleRunningState
-                ? MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is stopped.")
-                : MacOSVirtualMachineConfigurationHelper.localized("Ready to start.")
+                ? MachineConfigurationHelper.localized("Virtual machine is stopped.")
+                : MachineConfigurationHelper.localized("Ready to start.")
         } else if profile.isBundlePresentOnDisk {
             virtualMachineProfiles[index].status = .incomplete
             virtualMachineProfiles[index].installProgress = 0
-            virtualMachineProfiles[index].statusDetail = MacOSVirtualMachineConfigurationHelper.localized("Missing VM files: %@", profile.missingFileNames.joined(separator: ", "))
+            virtualMachineProfiles[index].statusDetail = MachineConfigurationHelper.localized("Missing VM files: %@", profile.missingFileNames.joined(separator: ", "))
         } else {
             virtualMachineProfiles[index].status = .notInstalled
             virtualMachineProfiles[index].installProgress = 0
-            virtualMachineProfiles[index].statusDetail = MacOSVirtualMachineConfigurationHelper.localized("Download and install macOS to create this VM.")
+            virtualMachineProfiles[index].statusDetail = MachineConfigurationHelper.localized("Download and install macOS to create this VM.")
         }
     }
 
@@ -297,6 +299,18 @@ final class Coordinator: NSObject, ObservableObject {
         return selectedProfile.status == .notInstalled || selectedProfile.status == .incomplete || selectedProfile.status == .failed
     }
 
+    var canCancelSelectedProfileInstallation: Bool {
+        selectedProfile?.status == .installing || isInstallationInProgress || restoreImageDownloadTask != nil || macOSInstaller != nil || installationProcess != nil
+    }
+
+    var canDeleteSelectedProfile: Bool {
+        guard let selectedProfile else {
+            return false
+        }
+
+        return selectedProfile.status != .running && selectedProfile.status != .starting && selectedProfile.status != .installing && !canCancelSelectedProfileInstallation
+    }
+
     var canStopVirtualMachine: Bool {
         displayedVirtualMachine != nil || virtualMachine != nil || selectedProfile?.status == .running
     }
@@ -308,7 +322,7 @@ final class Coordinator: NSObject, ObservableObject {
         }
 
         virtualMachineProfiles[selectedProfileIndex].status = .stopped
-        virtualMachineProfiles[selectedProfileIndex].statusDetail = MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is stopped.")
+        virtualMachineProfiles[selectedProfileIndex].statusDetail = MachineConfigurationHelper.localized("Virtual machine is stopped.")
         virtualMachineProfiles[selectedProfileIndex].installProgress = 100
         saveProfiles()
     }
@@ -327,6 +341,8 @@ final class Coordinator: NSObject, ObservableObject {
     func createProfile(name: String,
                        vmBundleURL: URL,
                        sharedFolderURL: URL?,
+                       restoreImageURL: URL?,
+                       osVersion: String?,
                        memorySizeInGiB: Int,
                        diskSizeInGiB: Int) {
         do {
@@ -344,6 +360,8 @@ final class Coordinator: NSObject, ObservableObject {
                 ? nextGeneratedProfileName()
                 : name.trimmingCharacters(in: .whitespacesAndNewlines)
             let profile = MachineProfile(name: profileName,
+                                         osVersion: osVersion,
+                                                restoreImageURLString: restoreImageURL?.absoluteString,
                                                 memorySizeInGiB: memorySizeInGiB,
                                                 diskSizeInGiB: diskSizeInGiB,
                                                 vmBundlePath: normalizedURL.path,
@@ -351,7 +369,7 @@ final class Coordinator: NSObject, ObservableObject {
                                                 sharedFolderPath: sharedFolderURL?.path,
                                                 sharedFolderBookmarkData: sharedBookmarkData,
                                                 status: .notInstalled,
-                                                statusDetail: MacOSVirtualMachineConfigurationHelper.localized("Download and install macOS to create this VM."))
+                                                statusDetail: MachineConfigurationHelper.localized("Download and install macOS to create this VM."))
             virtualMachineProfiles.append(profile)
             selectedProfileID = profile.id
             refreshAllProfileStatuses()
@@ -369,8 +387,20 @@ final class Coordinator: NSObject, ObservableObject {
             return
         }
 
-        if virtualMachineProfiles[selectedProfileIndex].status == .running {
-            showInformationAlert(MacOSVirtualMachineConfigurationHelper.localized("Stop the virtual machine before removing it from the list."))
+        if !canDeleteSelectedProfile {
+            showInformationAlert(MachineConfigurationHelper.localized("Stop or cancel this virtual machine before deleting it."))
+            return
+        }
+
+        let profile = virtualMachineProfiles[selectedProfileIndex]
+        guard confirmDelete(profile) else {
+            return
+        }
+
+        do {
+            try deleteBundle(for: profile)
+        } catch {
+            showInformationAlert(error.localizedDescription)
             return
         }
 
@@ -385,8 +415,27 @@ final class Coordinator: NSObject, ObservableObject {
         }
     }
 
+    private func confirmDelete(_ profile: MachineProfile) -> Bool {
+        let alert = NSAlert()
+        alert.messageText = MachineConfigurationHelper.localized("Delete \"%@\"?", profile.name)
+        alert.informativeText = MachineConfigurationHelper.localized("This removes the VM.bundle from disk and deletes the virtual machine record from the database.")
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: MachineConfigurationHelper.localized("Delete"))
+        alert.addButton(withTitle: MachineConfigurationHelper.localized("Cancel"))
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    private func deleteBundle(for profile: MachineProfile) throws {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: profile.vmBundleURL.path) else {
+            return
+        }
+
+        try fileManager.removeItem(at: profile.vmBundleURL)
+    }
+
     private func nextGeneratedProfileName() -> String {
-        let baseName = MacOSVirtualMachineConfigurationHelper.localized("Virtual Machine")
+        let baseName = MachineConfigurationHelper.localized("Virtual Machine")
         var candidate = baseName
         var index = 2
 
@@ -458,12 +507,12 @@ final class Coordinator: NSObject, ObservableObject {
         } else {
             setActiveVMBundleURL(selectedProfile.vmBundleURL)
         }
-        UserDefaults.standard.set(selectedProfile.memorySizeInGiB, forKey: MacOSVirtualMachineConfigurationHelper.memorySizeInGiBUserDefaultsKey)
+        UserDefaults.standard.set(selectedProfile.memorySizeInGiB, forKey: MachineConfigurationHelper.memorySizeInGiBUserDefaultsKey)
 
         if let bookmarkData = selectedProfile.sharedFolderBookmarkData {
-            UserDefaults.standard.set(bookmarkData, forKey: MacOSVirtualMachineConfigurationHelper.sharedDirectoryBookmarkUserDefaultsKey)
+            UserDefaults.standard.set(bookmarkData, forKey: MachineConfigurationHelper.sharedDirectoryBookmarkUserDefaultsKey)
         } else {
-            UserDefaults.standard.removeObject(forKey: MacOSVirtualMachineConfigurationHelper.sharedDirectoryBookmarkUserDefaultsKey)
+            UserDefaults.standard.removeObject(forKey: MachineConfigurationHelper.sharedDirectoryBookmarkUserDefaultsKey)
         }
     }
 
@@ -487,30 +536,30 @@ final class Coordinator: NSObject, ObservableObject {
         macPlatform.auxiliaryStorage = auxiliaryStorage
 
         if !FileManager.default.fileExists(atPath: vmBundlePath) {
-            throw virtualMachineSetupError(MacOSVirtualMachineConfigurationHelper.localized("Missing Virtual Machine Bundle at %@. Run InstallationTool first to create it.", vmBundlePath))
+            throw virtualMachineSetupError(MachineConfigurationHelper.localized("Missing Virtual Machine Bundle at %@. Run InstallationTool first to create it.", vmBundlePath))
         }
 
         // Retrieve the hardware model and save this value to disk during installation.
         guard let hardwareModelData = try? Data(contentsOf: hardwareModelURL) else {
-            throw virtualMachineSetupError(MacOSVirtualMachineConfigurationHelper.localized("Failed to retrieve hardware model data."))
+            throw virtualMachineSetupError(MachineConfigurationHelper.localized("Failed to retrieve hardware model data."))
         }
 
         guard let hardwareModel = VZMacHardwareModel(dataRepresentation: hardwareModelData) else {
-            throw virtualMachineSetupError(MacOSVirtualMachineConfigurationHelper.localized("Failed to create hardware model."))
+            throw virtualMachineSetupError(MachineConfigurationHelper.localized("Failed to create hardware model."))
         }
 
         if !hardwareModel.isSupported {
-            throw virtualMachineSetupError(MacOSVirtualMachineConfigurationHelper.localized("The hardware model isn't supported on the current host"))
+            throw virtualMachineSetupError(MachineConfigurationHelper.localized("The hardware model isn't supported on the current host"))
         }
         macPlatform.hardwareModel = hardwareModel
 
         // Retrieve the machine identifier and save this value to disk during installation.
         guard let machineIdentifierData = try? Data(contentsOf: machineIdentifierURL) else {
-            throw virtualMachineSetupError(MacOSVirtualMachineConfigurationHelper.localized("Failed to retrieve machine identifier data."))
+            throw virtualMachineSetupError(MachineConfigurationHelper.localized("Failed to retrieve machine identifier data."))
         }
 
         guard let machineIdentifier = VZMacMachineIdentifier(dataRepresentation: machineIdentifierData) else {
-            throw virtualMachineSetupError(MacOSVirtualMachineConfigurationHelper.localized("Failed to create machine identifier."))
+            throw virtualMachineSetupError(MachineConfigurationHelper.localized("Failed to create machine identifier."))
         }
         macPlatform.machineIdentifier = machineIdentifier
 
@@ -523,20 +572,20 @@ final class Coordinator: NSObject, ObservableObject {
         let virtualMachineConfiguration = VZVirtualMachineConfiguration()
 
         virtualMachineConfiguration.platform = try createMacPlaform()
-        virtualMachineConfiguration.bootLoader = MacOSVirtualMachineConfigurationHelper.createBootLoader()
-        virtualMachineConfiguration.cpuCount = MacOSVirtualMachineConfigurationHelper.computeCPUCount()
-        virtualMachineConfiguration.memorySize = MacOSVirtualMachineConfigurationHelper.computeMemorySize()
+        virtualMachineConfiguration.bootLoader = MachineConfigurationHelper.createBootLoader()
+        virtualMachineConfiguration.cpuCount = MachineConfigurationHelper.computeCPUCount()
+        virtualMachineConfiguration.memorySize = MachineConfigurationHelper.computeMemorySize()
 
-        virtualMachineConfiguration.audioDevices = [MacOSVirtualMachineConfigurationHelper.createSoundDeviceConfiguration()]
-        virtualMachineConfiguration.graphicsDevices = [MacOSVirtualMachineConfigurationHelper.createGraphicsDeviceConfiguration()]
-        virtualMachineConfiguration.networkDevices = [MacOSVirtualMachineConfigurationHelper.createNetworkDeviceConfiguration()]
-        virtualMachineConfiguration.storageDevices = [MacOSVirtualMachineConfigurationHelper.createBlockDeviceConfiguration()]
-        if let directorySharingDevice = MacOSVirtualMachineConfigurationHelper.createDirectorySharingDeviceConfiguration() {
+        virtualMachineConfiguration.audioDevices = [MachineConfigurationHelper.createSoundDeviceConfiguration()]
+        virtualMachineConfiguration.graphicsDevices = [MachineConfigurationHelper.createGraphicsDeviceConfiguration()]
+        virtualMachineConfiguration.networkDevices = [MachineConfigurationHelper.createNetworkDeviceConfiguration()]
+        virtualMachineConfiguration.storageDevices = [MachineConfigurationHelper.createBlockDeviceConfiguration()]
+        if let directorySharingDevice = MachineConfigurationHelper.createDirectorySharingDeviceConfiguration() {
             virtualMachineConfiguration.directorySharingDevices = [directorySharingDevice]
         }
 
-        virtualMachineConfiguration.pointingDevices = [MacOSVirtualMachineConfigurationHelper.createPointingDeviceConfiguration()]
-        virtualMachineConfiguration.keyboards = [MacOSVirtualMachineConfigurationHelper.createKeyboardConfiguration()]
+        virtualMachineConfiguration.pointingDevices = [MachineConfigurationHelper.createPointingDeviceConfiguration()]
+        virtualMachineConfiguration.keyboards = [MachineConfigurationHelper.createKeyboardConfiguration()]
 
         try virtualMachineConfiguration.validate()
 
@@ -595,10 +644,10 @@ final class Coordinator: NSObject, ObservableObject {
 
         if errorDescription.contains("Failed to lock auxiliary storage")
             || nsError.localizedDescription.contains("Failed to lock auxiliary storage") {
-            return MacOSVirtualMachineConfigurationHelper.localized("The virtual machine is already in use. Quit any other running copy of VirtualiseOS or wait for the previous VM process to finish, then start the app again.")
+            return MachineConfigurationHelper.localized("The virtual machine is already in use. Quit any other running copy of VirtualiseOS or wait for the previous VM process to finish, then start the app again.")
         }
 
-        return MacOSVirtualMachineConfigurationHelper.localized(prefixKey, errorDescription)
+        return MachineConfigurationHelper.localized(prefixKey, errorDescription)
     }
 
     @available(macOS 14.0, *)
@@ -723,7 +772,7 @@ final class Coordinator: NSObject, ObservableObject {
     private func presentRunningVirtualMachine() {
         setupViewModel?.isLaunchSpinnerVisible = false
         updateSelectedProfile(status: .running,
-                              detail: MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is running."),
+                              detail: MachineConfigurationHelper.localized("Virtual machine is running."),
                               progress: 100)
         isVirtualMachineVisible = true
         virtualMachineWindowRequest += 1
@@ -735,11 +784,11 @@ final class Coordinator: NSObject, ObservableObject {
         }
 
         updateSelectedProfile(status: .starting,
-                              detail: MacOSVirtualMachineConfigurationHelper.localized("Opening the selected VM.bundle."),
+                              detail: MachineConfigurationHelper.localized("Opening the selected VM.bundle."),
                               progress: 100)
-        setupViewModel.status = MacOSVirtualMachineConfigurationHelper.localized("Starting virtual machine...")
-        setupViewModel.detail = MacOSVirtualMachineConfigurationHelper.localized("VirtualiseOS is validating the VM configuration and opening the selected VM.bundle.")
-        setupViewModel.actionTitle = MacOSVirtualMachineConfigurationHelper.localized("Starting...")
+        setupViewModel.status = MachineConfigurationHelper.localized("Starting virtual machine...")
+        setupViewModel.detail = MachineConfigurationHelper.localized("VirtualiseOS is validating the VM configuration and opening the selected VM.bundle.")
+        setupViewModel.actionTitle = MachineConfigurationHelper.localized("Starting...")
         setupViewModel.isActionEnabled = false
         setupViewModel.areControlsEnabled = false
         setupViewModel.progress = 0
@@ -749,7 +798,7 @@ final class Coordinator: NSObject, ObservableObject {
 
     private func handleVirtualMachineLaunchFailure(_ message: String) {
         updateSelectedProfile(status: .stopped,
-                              detail: MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is stopped."),
+                              detail: MachineConfigurationHelper.localized("Virtual machine is stopped."),
                               progress: 100)
         displayedVirtualMachine = nil
         isVirtualMachineVisible = false
@@ -757,12 +806,12 @@ final class Coordinator: NSObject, ObservableObject {
         virtualMachineResponder = nil
         showInstallationScreen()
         updateSelectedProfile(status: .failed, detail: message, progress: 0)
-        setupViewModel?.status = MacOSVirtualMachineConfigurationHelper.localized("Virtual machine failed to start")
+        setupViewModel?.status = MachineConfigurationHelper.localized("Virtual machine failed to start")
         setupViewModel?.detail = message
         setupViewModel?.progress = 0
         setupViewModel?.isProgressVisible = false
         setupViewModel?.isLaunchSpinnerVisible = false
-        setupViewModel?.actionTitle = MacOSVirtualMachineConfigurationHelper.localized("Retry Open VM")
+        setupViewModel?.actionTitle = MachineConfigurationHelper.localized("Retry Open VM")
         setupViewModel?.isActionHidden = false
         setupViewModel?.isActionEnabled = true
         setupViewModel?.areControlsEnabled = true
@@ -786,7 +835,7 @@ final class Coordinator: NSObject, ObservableObject {
                 }
             }
         } else {
-            showInformationAlert(MacOSVirtualMachineConfigurationHelper.localized("The virtual machine cannot be stopped while it is changing state. Try again in a moment."))
+            showInformationAlert(MachineConfigurationHelper.localized("The virtual machine cannot be stopped while it is changing state. Try again in a moment."))
         }
     }
 
@@ -814,7 +863,7 @@ final class Coordinator: NSObject, ObservableObject {
         if markAsStopped {
             markSelectedProfileStoppedIfNeeded()
             updateSelectedProfile(status: .stopped,
-                                  detail: MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is stopped."),
+                                  detail: MachineConfigurationHelper.localized("Virtual machine is stopped."),
                                   progress: 100)
         }
         displayedVirtualMachine = nil
@@ -826,14 +875,17 @@ final class Coordinator: NSObject, ObservableObject {
     }
 
     private func showInstallationScreen() {
-        let model = SetupViewModel(status: MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is not installed"),
-                                   detail: MacOSVirtualMachineConfigurationHelper.localized("Download and install the latest macOS version supported by this Mac."),
-                                   actionTitle: MacOSVirtualMachineConfigurationHelper.localized("Download and Install Latest macOS"),
+        let model = SetupViewModel(status: MachineConfigurationHelper.localized("Virtual machine is not installed"),
+                                   detail: MachineConfigurationHelper.localized("Download and install the latest macOS version supported by this Mac."),
+                                   actionTitle: MachineConfigurationHelper.localized("Download and Install Latest macOS"),
                                    selectedMemorySizeInGiB: selectedMemorySizeInGiB(),
                                    vmLocationDescription: vmLocationDescription(),
                                    sharedFolderDescription: sharedFolderDescription())
         model.actionHandler = { [weak self] in
             self?.downloadAndInstallLatestMacOS()
+        }
+        model.cancelActionHandler = { [weak self] in
+            self?.cancelSelectedVirtualMachineInstallation()
         }
         model.chooseVMLocationHandler = { [weak self] in
             self?.chooseVMLocation()
@@ -842,7 +894,7 @@ final class Coordinator: NSObject, ObservableObject {
             self?.chooseSharedFolder()
         }
         model.memorySelectionHandler = { memorySizeInGiB in
-            UserDefaults.standard.set(memorySizeInGiB, forKey: MacOSVirtualMachineConfigurationHelper.memorySizeInGiBUserDefaultsKey)
+            UserDefaults.standard.set(memorySizeInGiB, forKey: MachineConfigurationHelper.memorySizeInGiBUserDefaultsKey)
         }
 
         setupViewModel = model
@@ -850,12 +902,12 @@ final class Coordinator: NSObject, ObservableObject {
     }
 
     private func vmLocationDescription() -> String {
-        return MacOSVirtualMachineConfigurationHelper.localized("VM bundle path: %@", vmBundleURL.path)
+        return MachineConfigurationHelper.localized("VM bundle path: %@", vmBundleURL.path)
     }
 
     func chooseVMLocation() {
         guard virtualMachine == nil else {
-            showInformationAlert(MacOSVirtualMachineConfigurationHelper.localized("Changing the VM location requires quitting the running virtual machine first."))
+            showInformationAlert(MachineConfigurationHelper.localized("Changing the VM location requires quitting the running virtual machine first."))
             return
         }
 
@@ -865,8 +917,8 @@ final class Coordinator: NSObject, ObservableObject {
         openPanel.allowsMultipleSelection = false
         openPanel.canCreateDirectories = true
         openPanel.treatsFilePackagesAsDirectories = false
-        openPanel.prompt = MacOSVirtualMachineConfigurationHelper.localized("Choose")
-        openPanel.message = MacOSVirtualMachineConfigurationHelper.localized("Choose VM.bundle or the folder where VirtualiseOS should store it.")
+        openPanel.prompt = MachineConfigurationHelper.localized("Choose")
+        openPanel.message = MachineConfigurationHelper.localized("Choose VM.bundle or the folder where VirtualiseOS should store it.")
 
         guard openPanel.runModal() == .OK, let url = openPanel.url else {
             return
@@ -915,21 +967,23 @@ final class Coordinator: NSObject, ObservableObject {
         setupViewModel.progress = 0
         setupViewModel.isProgressVisible = false
         setupViewModel.isLaunchSpinnerVisible = false
+        setupViewModel.isCancelActionVisible = canCancelSelectedProfileInstallation
+        setupViewModel.isCancelActionEnabled = canCancelSelectedProfileInstallation
         setupViewModel.vmLocationDescription = vmLocationDescription()
         setupViewModel.sharedFolderDescription = sharedFolderDescription()
 
         if isVirtualMachineInstalled {
-            setupViewModel.status = MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is ready")
-            setupViewModel.detail = MacOSVirtualMachineConfigurationHelper.localized("Open the existing VM.bundle at the selected location.")
-            setupViewModel.actionTitle = MacOSVirtualMachineConfigurationHelper.localized("Open VM")
+            setupViewModel.status = MachineConfigurationHelper.localized("Virtual machine is ready")
+            setupViewModel.detail = MachineConfigurationHelper.localized("Open the existing VM.bundle at the selected location.")
+            setupViewModel.actionTitle = MachineConfigurationHelper.localized("Open VM")
         } else if FileManager.default.fileExists(atPath: vmBundlePath) {
-            setupViewModel.status = MacOSVirtualMachineConfigurationHelper.localized("VM.bundle was found but is incomplete")
+            setupViewModel.status = MachineConfigurationHelper.localized("VM.bundle was found but is incomplete")
             setupViewModel.detail = missingVirtualMachineFilesDescription()
-            setupViewModel.actionTitle = MacOSVirtualMachineConfigurationHelper.localized("Download and Install Latest macOS")
+            setupViewModel.actionTitle = MachineConfigurationHelper.localized("Download and Install Latest macOS")
         } else {
-            setupViewModel.status = MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is not installed")
-            setupViewModel.detail = MacOSVirtualMachineConfigurationHelper.localized("Download and install the latest macOS version supported by this Mac.")
-            setupViewModel.actionTitle = MacOSVirtualMachineConfigurationHelper.localized("Download and Install Latest macOS")
+            setupViewModel.status = MachineConfigurationHelper.localized("Virtual machine is not installed")
+            setupViewModel.detail = MachineConfigurationHelper.localized("Download and install the latest macOS version supported by this Mac.")
+            setupViewModel.actionTitle = MachineConfigurationHelper.localized("Download and Install Latest macOS")
         }
     }
 
@@ -945,31 +999,31 @@ final class Coordinator: NSObject, ObservableObject {
             .map(\.lastPathComponent)
 
         guard !missingNames.isEmpty else {
-            return MacOSVirtualMachineConfigurationHelper.localized("Open the existing VM.bundle at the selected location.")
+            return MachineConfigurationHelper.localized("Open the existing VM.bundle at the selected location.")
         }
 
-        return MacOSVirtualMachineConfigurationHelper.localized("Missing VM files: %@", missingNames.joined(separator: ", "))
+        return MachineConfigurationHelper.localized("Missing VM files: %@", missingNames.joined(separator: ", "))
     }
 
     private func showInformationAlert(_ message: String) {
         let alert = NSAlert()
-        alert.messageText = MacOSVirtualMachineConfigurationHelper.localized("VirtualiseOS")
+        alert.messageText = MachineConfigurationHelper.localized("VirtualiseOS")
         alert.informativeText = message
         alert.alertStyle = .informational
-        alert.addButton(withTitle: MacOSVirtualMachineConfigurationHelper.localized("OK"))
+        alert.addButton(withTitle: MachineConfigurationHelper.localized("OK"))
         alert.runModal()
     }
 
     private func sharedFolderDescription() -> String {
         guard let url = selectedSharedFolderURL() else {
-            return MacOSVirtualMachineConfigurationHelper.localized("No shared folder selected")
+            return MachineConfigurationHelper.localized("No shared folder selected")
         }
 
-        return MacOSVirtualMachineConfigurationHelper.localized("Shared in the guest at /Volumes/My Shared Files: %@", url.path)
+        return MachineConfigurationHelper.localized("Shared in the guest at /Volumes/My Shared Files: %@", url.path)
     }
 
     private func selectedSharedFolderURL() -> URL? {
-        guard let bookmarkData = UserDefaults.standard.data(forKey: MacOSVirtualMachineConfigurationHelper.sharedDirectoryBookmarkUserDefaultsKey) else {
+        guard let bookmarkData = UserDefaults.standard.data(forKey: MachineConfigurationHelper.sharedDirectoryBookmarkUserDefaultsKey) else {
             return nil
         }
 
@@ -991,8 +1045,8 @@ final class Coordinator: NSObject, ObservableObject {
         openPanel.canChooseDirectories = true
         openPanel.allowsMultipleSelection = false
         openPanel.canCreateDirectories = true
-        openPanel.prompt = MacOSVirtualMachineConfigurationHelper.localized("Choose")
-        openPanel.message = MacOSVirtualMachineConfigurationHelper.localized("Choose a host folder to share with the macOS virtual machine.")
+        openPanel.prompt = MachineConfigurationHelper.localized("Choose")
+        openPanel.message = MachineConfigurationHelper.localized("Choose a host folder to share with the macOS virtual machine.")
 
         guard openPanel.runModal() == .OK, let url = openPanel.url else {
             return
@@ -1002,7 +1056,7 @@ final class Coordinator: NSObject, ObservableObject {
             let bookmarkData = try url.bookmarkData(options: [.withSecurityScope],
                                                     includingResourceValuesForKeys: nil,
                                                     relativeTo: nil)
-            UserDefaults.standard.set(bookmarkData, forKey: MacOSVirtualMachineConfigurationHelper.sharedDirectoryBookmarkUserDefaultsKey)
+            UserDefaults.standard.set(bookmarkData, forKey: MachineConfigurationHelper.sharedDirectoryBookmarkUserDefaultsKey)
             if let selectedProfileIndex {
                 virtualMachineProfiles[selectedProfileIndex].sharedFolderPath = url.path
                 virtualMachineProfiles[selectedProfileIndex].sharedFolderBookmarkData = bookmarkData
@@ -1019,7 +1073,7 @@ final class Coordinator: NSObject, ObservableObject {
     private func updateRunningSharedFolderIfPossible() {
         guard let virtualMachine,
               let directorySharingDevice = virtualMachine.directorySharingDevices.first as? VZVirtioFileSystemDevice,
-              let sharingConfiguration = MacOSVirtualMachineConfigurationHelper.createDirectorySharingDeviceConfiguration() else {
+              let sharingConfiguration = MachineConfigurationHelper.createDirectorySharingDeviceConfiguration() else {
             return
         }
 
@@ -1027,8 +1081,25 @@ final class Coordinator: NSObject, ObservableObject {
     }
 
     private func selectedMemorySizeInGiB() -> Int {
-        let savedMemorySizeInGiB = UserDefaults.standard.integer(forKey: MacOSVirtualMachineConfigurationHelper.memorySizeInGiBUserDefaultsKey)
-        return savedMemorySizeInGiB > 0 ? savedMemorySizeInGiB : MacOSVirtualMachineConfigurationHelper.defaultMemorySizeInGiB
+        let savedMemorySizeInGiB = UserDefaults.standard.integer(forKey: MachineConfigurationHelper.memorySizeInGiBUserDefaultsKey)
+        return savedMemorySizeInGiB > 0 ? savedMemorySizeInGiB : MachineConfigurationHelper.defaultMemorySizeInGiB
+    }
+
+    static func macOSVersionString(_ version: OperatingSystemVersion) -> String {
+        if version.patchVersion > 0 {
+            return "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
+        }
+
+        return "\(version.majorVersion).\(version.minorVersion)"
+    }
+
+    static func restoreImageDisplayName(operatingSystemVersion: OperatingSystemVersion, buildVersion: String? = nil) -> String {
+        let version = macOSVersionString(operatingSystemVersion)
+        guard let buildVersion, !buildVersion.isEmpty else {
+            return MachineConfigurationHelper.localized("macOS %@", version)
+        }
+
+        return MachineConfigurationHelper.localized("macOS %@ (%@)", version, buildVersion)
     }
 
     func startSelectedVirtualMachine() {
@@ -1054,18 +1125,68 @@ final class Coordinator: NSObject, ObservableObject {
         }
 
         if let memorySizeInGiB = setupViewModel?.selectedMemorySizeInGiB {
-            UserDefaults.standard.set(memorySizeInGiB, forKey: MacOSVirtualMachineConfigurationHelper.memorySizeInGiBUserDefaultsKey)
+            UserDefaults.standard.set(memorySizeInGiB, forKey: MachineConfigurationHelper.memorySizeInGiBUserDefaultsKey)
         }
 
         isInstallationInProgress = true
+        isCancellingInstallation = false
         updateSelectedProfile(status: .installing,
-                              detail: MacOSVirtualMachineConfigurationHelper.localized("Preparing installation."),
+                              detail: MachineConfigurationHelper.localized("Preparing installation."),
                               progress: 0)
         setupViewModel?.isActionEnabled = false
+        setupViewModel?.isCancelActionVisible = true
+        setupViewModel?.isCancelActionEnabled = true
         setupViewModel?.areControlsEnabled = false
         setupViewModel?.isProgressVisible = true
         setupViewModel?.progress = 0
         startInAppInstallation()
+    }
+
+    func cancelSelectedVirtualMachineInstallation() {
+        guard canCancelSelectedProfileInstallation else {
+            return
+        }
+
+        isCancellingInstallation = true
+        setupViewModel?.status = MachineConfigurationHelper.localized("Canceling installation...")
+        setupViewModel?.detail = MachineConfigurationHelper.localized("Stopping the current download or installer.")
+        setupViewModel?.isCancelActionEnabled = false
+
+        restoreImageDownloadTask?.cancel()
+        restoreImageDownloadSession?.invalidateAndCancel()
+        restoreImageDownloadObserver = nil
+        restoreImageDownloadTask = nil
+        restoreImageDownloadMode = nil
+        restoreImageDownloadProfileID = nil
+        restoreImageDownloadSession = nil
+
+        macOSInstaller?.progress.cancel()
+        installationProcess?.terminate()
+
+        completeInstallationCancellation()
+    }
+
+    private func completeInstallationCancellation() {
+        isInstallationInProgress = false
+        restoreImageDownloadObserver = nil
+        restoreImageDownloadProfileID = nil
+        restoreImageDownloadTask = nil
+        restoreImageDownloadMode = nil
+        macOSInstallationObserver = nil
+        macOSInstaller = nil
+        restoreImageDownloadSession?.finishTasksAndInvalidate()
+        restoreImageDownloadSession = nil
+        installationVirtualMachine = nil
+        installationVirtualMachineResponder = nil
+        installationProcess = nil
+        isCancellingInstallation = false
+
+        refreshAllProfileStatuses()
+        let canceledStatus: BundleStatus = FileManager.default.fileExists(atPath: vmBundlePath) ? .incomplete : .notInstalled
+        updateSelectedProfile(status: canceledStatus,
+                              detail: MachineConfigurationHelper.localized("Installation was canceled. Delete the VM or start installation again."),
+                              progress: 0)
+        updateSetupStateForCurrentVMLocation()
     }
 
     private func startInAppInstallation() {
@@ -1078,24 +1199,49 @@ final class Coordinator: NSObject, ObservableObject {
         }
 
         setupViewModel?.isActionHidden = true
-        setupViewModel?.status = MacOSVirtualMachineConfigurationHelper.localized("Finding latest supported macOS...")
-        setupViewModel?.detail = MacOSVirtualMachineConfigurationHelper.localized("VirtualiseOS will download the latest macOS restore image supported by this Mac.")
+        setupViewModel?.status = MachineConfigurationHelper.localized("Preparing macOS restore image...")
+        setupViewModel?.detail = MachineConfigurationHelper.localized("VirtualiseOS will download the selected macOS restore image.")
         setupViewModel?.progress = 0
 
+        downloadSelectedRestoreImageOrLatest()
+    }
+
+    private func downloadSelectedRestoreImageOrLatest() {
+        if let selectedProfile,
+           let restoreImageURL = selectedProfile.restoreImageURL {
+            let osVersion = selectedProfile.osVersion ?? MachineConfigurationHelper.localized("Selected macOS")
+            setupViewModel?.detail = MachineConfigurationHelper.localized("Selected macOS: %@", osVersion)
+            updateSelectedProfile(status: .installing,
+                                  detail: MachineConfigurationHelper.localized("Selected macOS: %@", osVersion),
+                                  progress: 0,
+                                  osVersion: selectedProfile.osVersion)
+            downloadRestoreImage(from: restoreImageURL, osVersion: selectedProfile.osVersion)
+            return
+        }
+
+        fetchLatestSupportedRestoreImage()
+    }
+
+    private func fetchLatestSupportedRestoreImage() {
         VZMacOSRestoreImage.fetchLatestSupported { [weak self] result in
             DispatchQueue.main.async {
+                guard let self, self.isInstallationInProgress else {
+                    return
+                }
+
                 switch result {
                 case let .failure(error):
-                    self?.showInstallationFailure(error.localizedDescription)
+                    self.showInstallationFailure(error.localizedDescription)
 
                 case let .success(restoreImage):
-                    let osVersion = "\(restoreImage.operatingSystemVersion) (\(restoreImage.buildVersion))"
-                    self?.setupViewModel?.detail = MacOSVirtualMachineConfigurationHelper.localized("Latest supported macOS: %@", osVersion)
-                    self?.updateSelectedProfile(status: .installing,
-                                                 detail: MacOSVirtualMachineConfigurationHelper.localized("Latest supported macOS: %@", osVersion),
-                                                 progress: 0,
-                                                 osVersion: osVersion)
-                    self?.downloadRestoreImage(restoreImage)
+                    let osVersion = Self.restoreImageDisplayName(operatingSystemVersion: restoreImage.operatingSystemVersion,
+                                                                 buildVersion: restoreImage.buildVersion)
+                    self.setupViewModel?.detail = MachineConfigurationHelper.localized("Latest supported macOS: %@", osVersion)
+                    self.updateSelectedProfile(status: .installing,
+                                               detail: MachineConfigurationHelper.localized("Latest supported macOS: %@", osVersion),
+                                               progress: 0,
+                                               osVersion: osVersion)
+                    self.downloadRestoreImage(restoreImage)
                 }
             }
         }
@@ -1159,20 +1305,30 @@ final class Coordinator: NSObject, ObservableObject {
                 self?.restoreImageDownloadSession?.finishTasksAndInvalidate()
                 self?.restoreImageDownloadSession = nil
                 self?.restoreImageDownloadProfileID = nil
-                self?.showInstallationFailure(MacOSVirtualMachineConfigurationHelper.localized("The background macOS download is no longer available. Start the download again."))
+                self?.showInstallationFailure(MachineConfigurationHelper.localized("The background macOS download is no longer available. Start the download again."))
             }
         }
     }
 
     private func downloadRestoreImage(_ restoreImage: VZMacOSRestoreImage) {
-        setupViewModel?.status = MacOSVirtualMachineConfigurationHelper.localized("Downloading macOS restore image...")
-        setupViewModel?.detail = MacOSVirtualMachineConfigurationHelper.localized("The download can continue in the background while VirtualiseOS remains open.")
+        downloadRestoreImage(from: restoreImage.url,
+                             osVersion: Self.restoreImageDisplayName(operatingSystemVersion: restoreImage.operatingSystemVersion,
+                                                                     buildVersion: restoreImage.buildVersion))
+    }
+
+    private func downloadRestoreImage(from url: URL, osVersion: String?) {
+        setupViewModel?.status = MachineConfigurationHelper.localized("Downloading macOS restore image...")
+        if let osVersion {
+            setupViewModel?.detail = MachineConfigurationHelper.localized("Downloading %@.", osVersion)
+        } else {
+            setupViewModel?.detail = MachineConfigurationHelper.localized("The download can continue in the background while VirtualiseOS remains open.")
+        }
 
         let profileID = selectedProfileID ?? UUID()
         restoreImageDownloadProfileID = profileID
 
         let mode: RestoreImageDownloadMode = NSApp.isActive ? .foreground : .background
-        startRestoreImageDownload(from: restoreImage.url, resumeData: nil, profileID: profileID, mode: mode)
+        startRestoreImageDownload(from: url, resumeData: nil, profileID: profileID, mode: mode)
     }
 
     private func startRestoreImageDownload(from url: URL?,
@@ -1187,7 +1343,7 @@ final class Coordinator: NSObject, ObservableObject {
         } else if let url {
             downloadTask = session.downloadTask(with: url)
         } else {
-            showInstallationFailure(MacOSVirtualMachineConfigurationHelper.localized("The macOS download could not be resumed."))
+            showInstallationFailure(MachineConfigurationHelper.localized("The macOS download could not be resumed."))
             return
         }
 
@@ -1271,12 +1427,16 @@ final class Coordinator: NSObject, ObservableObject {
                 return
             }
 
+            if (error as NSError).code == NSURLErrorCancelled, !self.isInstallationInProgress {
+                return
+            }
+
             self.restoreImageDownloadSession?.finishTasksAndInvalidate()
             self.restoreImageDownloadSession = nil
             self.restoreImageDownloadTask = nil
             self.restoreImageDownloadMode = nil
             self.restoreImageDownloadProfileID = nil
-            self.showInstallationFailure(MacOSVirtualMachineConfigurationHelper.localized("Download failed with error: %@", error.localizedDescription))
+            self.showInstallationFailure(MachineConfigurationHelper.localized("Download failed with error: %@", error.localizedDescription))
         }
     }
 
@@ -1287,9 +1447,9 @@ final class Coordinator: NSObject, ObservableObject {
         let downloadedGiB = Double(downloadedBytes) / 1024 / 1024 / 1024
         let detail: String
         if expectedBytes > 0 {
-            detail = MacOSVirtualMachineConfigurationHelper.localized("%d%% downloaded (%.1f GB)", Int(percentage), downloadedGiB)
+            detail = MachineConfigurationHelper.localized("%d%% downloaded (%.1f GB)", Int(percentage), downloadedGiB)
         } else {
-            detail = MacOSVirtualMachineConfigurationHelper.localized("%.1f GB downloaded", downloadedGiB)
+            detail = MachineConfigurationHelper.localized("%.1f GB downloaded", downloadedGiB)
         }
 
         setupViewModel?.detail = detail
@@ -1327,8 +1487,8 @@ final class Coordinator: NSObject, ObservableObject {
     }
 
     private func installMacOS(from ipswURL: URL) {
-        setupViewModel?.status = MacOSVirtualMachineConfigurationHelper.localized("Preparing installer...")
-        setupViewModel?.detail = MacOSVirtualMachineConfigurationHelper.localized("Loading the downloaded macOS restore image.")
+        setupViewModel?.status = MachineConfigurationHelper.localized("Preparing installer...")
+        setupViewModel?.detail = MachineConfigurationHelper.localized("Loading the downloaded macOS restore image.")
 
         VZMacOSRestoreImage.load(from: ipswURL) { [weak self] result in
             DispatchQueue.main.async {
@@ -1345,12 +1505,12 @@ final class Coordinator: NSObject, ObservableObject {
 
     private func installMacOS(restoreImage: VZMacOSRestoreImage) {
         guard let macOSConfiguration = restoreImage.mostFeaturefulSupportedConfiguration else {
-            showInstallationFailure(MacOSVirtualMachineConfigurationHelper.localized("No supported macOS configuration is available for this Mac."))
+            showInstallationFailure(MachineConfigurationHelper.localized("No supported macOS configuration is available for this Mac."))
             return
         }
 
         guard macOSConfiguration.hardwareModel.isSupported else {
-            showInstallationFailure(MacOSVirtualMachineConfigurationHelper.localized("The macOS configuration is not supported on this Mac."))
+            showInstallationFailure(MachineConfigurationHelper.localized("The macOS configuration is not supported on this Mac."))
             return
         }
 
@@ -1372,32 +1532,32 @@ final class Coordinator: NSObject, ObservableObject {
         let virtualMachineConfiguration = VZVirtualMachineConfiguration()
 
         virtualMachineConfiguration.platform = try createInstallationPlatformConfiguration(macOSConfiguration: macOSConfiguration)
-        virtualMachineConfiguration.cpuCount = MacOSVirtualMachineConfigurationHelper.computeCPUCount()
+        virtualMachineConfiguration.cpuCount = MachineConfigurationHelper.computeCPUCount()
         if virtualMachineConfiguration.cpuCount < macOSConfiguration.minimumSupportedCPUCount {
             throw NSError(domain: "VirtualiseOS", code: 2, userInfo: [
-                NSLocalizedDescriptionKey: MacOSVirtualMachineConfigurationHelper.localized("This Mac does not have enough CPU cores for the selected macOS restore image.")
+                NSLocalizedDescriptionKey: MachineConfigurationHelper.localized("This Mac does not have enough CPU cores for the selected macOS restore image.")
             ])
         }
 
-        virtualMachineConfiguration.memorySize = MacOSVirtualMachineConfigurationHelper.computeMemorySize()
+        virtualMachineConfiguration.memorySize = MachineConfigurationHelper.computeMemorySize()
         if virtualMachineConfiguration.memorySize < macOSConfiguration.minimumSupportedMemorySize {
             throw NSError(domain: "VirtualiseOS", code: 3, userInfo: [
-                NSLocalizedDescriptionKey: MacOSVirtualMachineConfigurationHelper.localized("This Mac does not have enough memory for the selected macOS restore image.")
+                NSLocalizedDescriptionKey: MachineConfigurationHelper.localized("This Mac does not have enough memory for the selected macOS restore image.")
             ])
         }
 
         try createDiskImage()
 
-        virtualMachineConfiguration.bootLoader = MacOSVirtualMachineConfigurationHelper.createBootLoader()
-        virtualMachineConfiguration.audioDevices = [MacOSVirtualMachineConfigurationHelper.createSoundDeviceConfiguration()]
-        virtualMachineConfiguration.graphicsDevices = [MacOSVirtualMachineConfigurationHelper.createGraphicsDeviceConfiguration()]
-        virtualMachineConfiguration.networkDevices = [MacOSVirtualMachineConfigurationHelper.createNetworkDeviceConfiguration()]
-        virtualMachineConfiguration.storageDevices = [MacOSVirtualMachineConfigurationHelper.createBlockDeviceConfiguration()]
-        if let directorySharingDevice = MacOSVirtualMachineConfigurationHelper.createDirectorySharingDeviceConfiguration() {
+        virtualMachineConfiguration.bootLoader = MachineConfigurationHelper.createBootLoader()
+        virtualMachineConfiguration.audioDevices = [MachineConfigurationHelper.createSoundDeviceConfiguration()]
+        virtualMachineConfiguration.graphicsDevices = [MachineConfigurationHelper.createGraphicsDeviceConfiguration()]
+        virtualMachineConfiguration.networkDevices = [MachineConfigurationHelper.createNetworkDeviceConfiguration()]
+        virtualMachineConfiguration.storageDevices = [MachineConfigurationHelper.createBlockDeviceConfiguration()]
+        if let directorySharingDevice = MachineConfigurationHelper.createDirectorySharingDeviceConfiguration() {
             virtualMachineConfiguration.directorySharingDevices = [directorySharingDevice]
         }
-        virtualMachineConfiguration.pointingDevices = [MacOSVirtualMachineConfigurationHelper.createPointingDeviceConfiguration()]
-        virtualMachineConfiguration.keyboards = [MacOSVirtualMachineConfigurationHelper.createKeyboardConfiguration()]
+        virtualMachineConfiguration.pointingDevices = [MachineConfigurationHelper.createPointingDeviceConfiguration()]
+        virtualMachineConfiguration.keyboards = [MachineConfigurationHelper.createKeyboardConfiguration()]
 
         try virtualMachineConfiguration.validate()
 
@@ -1432,7 +1592,7 @@ final class Coordinator: NSObject, ObservableObject {
 
         guard diskFd != -1 else {
             throw NSError(domain: "VirtualiseOS", code: 4, userInfo: [
-                NSLocalizedDescriptionKey: MacOSVirtualMachineConfigurationHelper.localized("Cannot create the virtual machine disk image.")
+                NSLocalizedDescriptionKey: MachineConfigurationHelper.localized("Cannot create the virtual machine disk image.")
             ])
         }
 
@@ -1442,41 +1602,50 @@ final class Coordinator: NSObject, ObservableObject {
 
         guard ftruncate(diskFd, off_t(diskImageSizeInBytes)) == 0 else {
             throw NSError(domain: "VirtualiseOS", code: 5, userInfo: [
-                NSLocalizedDescriptionKey: MacOSVirtualMachineConfigurationHelper.localized("Cannot resize the virtual machine disk image.")
+                NSLocalizedDescriptionKey: MachineConfigurationHelper.localized("Cannot resize the virtual machine disk image.")
             ])
         }
     }
 
     private func startMacOSInstallation(on virtualMachine: VZVirtualMachine, restoreImageURL: URL) {
         let installer = VZMacOSInstaller(virtualMachine: virtualMachine, restoringFromImageAt: restoreImageURL)
+        macOSInstaller = installer
 
-        setupViewModel?.status = MacOSVirtualMachineConfigurationHelper.localized("Installing macOS...")
-        setupViewModel?.detail = MacOSVirtualMachineConfigurationHelper.localized("The virtual machine is being created.")
+        setupViewModel?.status = MachineConfigurationHelper.localized("Installing macOS...")
+        setupViewModel?.detail = MachineConfigurationHelper.localized("The virtual machine is being created.")
         setupViewModel?.progress = max(setupViewModel?.progress ?? 0, 50)
 
         installer.install { [weak self] result in
             DispatchQueue.main.async {
+                guard let self, self.isInstallationInProgress else {
+                    return
+                }
+
                 switch result {
                 case let .failure(error):
-                    self?.showInstallationFailure(error.localizedDescription)
+                    self.showInstallationFailure(error.localizedDescription)
 
                 case .success:
-                    self?.setupViewModel?.status = MacOSVirtualMachineConfigurationHelper.localized("Installation complete")
-                    self?.finishInstallationAndRefreshSetupState()
+                    self.setupViewModel?.status = MachineConfigurationHelper.localized("Installation complete")
+                    self.finishInstallationAndRefreshSetupState()
                 }
             }
         }
 
         macOSInstallationObserver = installer.progress.observe(\.fractionCompleted, options: [.initial, .new]) { [weak self] progress, change in
             DispatchQueue.main.async {
+                guard let self, self.isInstallationInProgress else {
+                    return
+                }
+
                 let percentage = (change.newValue ?? progress.fractionCompleted) * 100
-                self?.setupViewModel?.isProgressVisible = true
-                self?.setupViewModel?.progress = 50 + min(percentage * 0.5, 50)
-                let detail = MacOSVirtualMachineConfigurationHelper.localized("%d%% installed", Int(percentage))
-                self?.setupViewModel?.detail = detail
-                self?.updateSelectedProfile(status: .installing,
-                                             detail: detail,
-                                             progress: 50 + min(percentage * 0.5, 50))
+                self.setupViewModel?.isProgressVisible = true
+                self.setupViewModel?.progress = 50 + min(percentage * 0.5, 50)
+                let detail = MachineConfigurationHelper.localized("%d%% installed", Int(percentage))
+                self.setupViewModel?.detail = detail
+                self.updateSelectedProfile(status: .installing,
+                                           detail: detail,
+                                           progress: 50 + min(percentage * 0.5, 50))
             }
         }
     }
@@ -1513,8 +1682,8 @@ final class Coordinator: NSObject, ObservableObject {
             }
 
             installationProcess = process
-            setupViewModel?.status = MacOSVirtualMachineConfigurationHelper.localized("Downloading macOS restore image...")
-            setupViewModel?.detail = MacOSVirtualMachineConfigurationHelper.localized("This can take a while depending on network speed.")
+            setupViewModel?.status = MachineConfigurationHelper.localized("Downloading macOS restore image...")
+            setupViewModel?.detail = MachineConfigurationHelper.localized("This can take a while depending on network speed.")
             setupViewModel?.isActionHidden = true
             try process.run()
         } catch {
@@ -1544,34 +1713,38 @@ final class Coordinator: NSObject, ObservableObject {
         }
 
         throw NSError(domain: "VirtualiseOS", code: 1, userInfo: [
-            NSLocalizedDescriptionKey: MacOSVirtualMachineConfigurationHelper.localized("InstallationTool-Swift is missing from the app bundle.")
+            NSLocalizedDescriptionKey: MachineConfigurationHelper.localized("InstallationTool-Swift is missing from the app bundle.")
         ])
     }
 
     private func handleInstallationOutput(_ output: String) {
+        guard isInstallationInProgress else {
+            return
+        }
+
         if output.contains("Restore image download progress") {
-            setupViewModel?.status = MacOSVirtualMachineConfigurationHelper.localized("Downloading macOS restore image...")
+            setupViewModel?.status = MachineConfigurationHelper.localized("Downloading macOS restore image...")
             if let percentage = progressPercentage(from: output) {
                 setupViewModel?.isProgressVisible = true
                 setupViewModel?.progress = min(percentage * 0.5, 50)
-                setupViewModel?.detail = MacOSVirtualMachineConfigurationHelper.localized("%d%% downloaded", Int(percentage))
+                setupViewModel?.detail = MachineConfigurationHelper.localized("%d%% downloaded", Int(percentage))
             }
         } else if output.contains("Latest supported macOS restore image") {
-            setupViewModel?.detail = MacOSVirtualMachineConfigurationHelper.localized("Found the latest supported macOS restore image.")
+            setupViewModel?.detail = MachineConfigurationHelper.localized("Found the latest supported macOS restore image.")
         } else if output.contains("Starting installation") {
-            setupViewModel?.status = MacOSVirtualMachineConfigurationHelper.localized("Installing macOS...")
-            setupViewModel?.detail = MacOSVirtualMachineConfigurationHelper.localized("The virtual machine is being created.")
+            setupViewModel?.status = MachineConfigurationHelper.localized("Installing macOS...")
+            setupViewModel?.detail = MachineConfigurationHelper.localized("The virtual machine is being created.")
             setupViewModel?.progress = max(setupViewModel?.progress ?? 0, 50)
         } else if output.contains("Installation progress") {
-            setupViewModel?.status = MacOSVirtualMachineConfigurationHelper.localized("Installing macOS...")
+            setupViewModel?.status = MachineConfigurationHelper.localized("Installing macOS...")
             if let percentage = progressPercentage(from: output) {
                 setupViewModel?.isProgressVisible = true
                 setupViewModel?.progress = 50 + min(percentage * 0.5, 50)
-                setupViewModel?.detail = MacOSVirtualMachineConfigurationHelper.localized("%d%% installed", Int(percentage))
+                setupViewModel?.detail = MachineConfigurationHelper.localized("%d%% installed", Int(percentage))
             }
         } else if output.contains("Installation succeeded") {
-            setupViewModel?.status = MacOSVirtualMachineConfigurationHelper.localized("Installation complete")
-            setupViewModel?.detail = MacOSVirtualMachineConfigurationHelper.localized("Open the existing VM.bundle at the selected location.")
+            setupViewModel?.status = MachineConfigurationHelper.localized("Installation complete")
+            setupViewModel?.detail = MachineConfigurationHelper.localized("Open the existing VM.bundle at the selected location.")
             setupViewModel?.progress = 100
         }
     }
@@ -1583,8 +1756,12 @@ final class Coordinator: NSObject, ObservableObject {
     }
 
     private func handleInstallationFinished(with terminationStatus: Int32) {
+        guard isInstallationInProgress else {
+            return
+        }
+
         guard terminationStatus == 0 else {
-            showInstallationFailure(MacOSVirtualMachineConfigurationHelper.localized("The installation tool exited with status %d.", terminationStatus))
+            showInstallationFailure(MachineConfigurationHelper.localized("The installation tool exited with status %d.", terminationStatus))
             return
         }
 
@@ -1600,13 +1777,14 @@ final class Coordinator: NSObject, ObservableObject {
         macOSInstallationObserver = nil
         restoreImageDownloadSession?.finishTasksAndInvalidate()
         restoreImageDownloadSession = nil
+        macOSInstaller = nil
         installationVirtualMachine = nil
         installationVirtualMachineResponder = nil
         setupViewModel?.progress = 100
         refreshAllProfileStatuses()
         if isVirtualMachineInstalled {
             updateSelectedProfile(status: .installed,
-                                  detail: MacOSVirtualMachineConfigurationHelper.localized("Ready to start."),
+                                  detail: MachineConfigurationHelper.localized("Ready to start."),
                                   progress: 100)
         }
         updateSetupStateForCurrentVMLocation()
@@ -1625,15 +1803,16 @@ final class Coordinator: NSObject, ObservableObject {
         macOSInstallationObserver = nil
         restoreImageDownloadSession?.finishTasksAndInvalidate()
         restoreImageDownloadSession = nil
+        macOSInstaller = nil
         installationVirtualMachine = nil
         installationVirtualMachineResponder = nil
         setupViewModel?.isLaunchSpinnerVisible = false
         updateSelectedProfile(status: .failed, detail: message, progress: 0)
-        setupViewModel?.status = MacOSVirtualMachineConfigurationHelper.localized("Installation failed")
+        setupViewModel?.status = MachineConfigurationHelper.localized("Installation failed")
         setupViewModel?.detail = message
         setupViewModel?.progress = 0
         setupViewModel?.isProgressVisible = false
-        setupViewModel?.actionTitle = MacOSVirtualMachineConfigurationHelper.localized("Retry Download and Install")
+        setupViewModel?.actionTitle = MachineConfigurationHelper.localized("Retry Download and Install")
         setupViewModel?.isActionHidden = false
         setupViewModel?.isActionEnabled = true
         setupViewModel?.areControlsEnabled = true
@@ -1647,7 +1826,7 @@ final class Coordinator: NSObject, ObservableObject {
     func saveVirtualMachine(completionHandler: @escaping () -> Void) {
         virtualMachine.saveMachineStateTo(url: saveFileURL, completionHandler: { (error) in
             guard error == nil else {
-                MacOSVirtualMachineConfigurationHelper.showErrorAndExit(self.virtualMachineErrorMessage(prefixKey: "Virtual machine failed to save with %@", error: error!))
+                MachineConfigurationHelper.showErrorAndExit(self.virtualMachineErrorMessage(prefixKey: "Virtual machine failed to save with %@", error: error!))
             }
 
             completionHandler()
@@ -1658,7 +1837,7 @@ final class Coordinator: NSObject, ObservableObject {
     func pauseAndSaveVirtualMachine(completionHandler: @escaping () -> Void) {
         virtualMachine.pause(completionHandler: { (result) in
             if case let .failure(error) = result {
-                MacOSVirtualMachineConfigurationHelper.showErrorAndExit(self.virtualMachineErrorMessage(prefixKey: "Virtual machine failed to pause with %@", error: error))
+                MachineConfigurationHelper.showErrorAndExit(self.virtualMachineErrorMessage(prefixKey: "Virtual machine failed to pause with %@", error: error))
             }
 
             self.saveVirtualMachine(completionHandler: completionHandler)

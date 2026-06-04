@@ -14,6 +14,7 @@ struct MachineProfile: Identifiable, Codable, Equatable {
     var name: String
     var createdAt: Date
     var osVersion: String?
+    var restoreImageURLString: String?
     var memorySizeInGiB: Int
     var diskSizeInGiB: Int
     var vmBundlePath: String
@@ -28,6 +29,7 @@ struct MachineProfile: Identifiable, Codable, Equatable {
          name: String,
          createdAt: Date = Date(),
          osVersion: String? = nil,
+         restoreImageURLString: String? = nil,
          memorySizeInGiB: Int,
          diskSizeInGiB: Int,
          vmBundlePath: String,
@@ -41,6 +43,7 @@ struct MachineProfile: Identifiable, Codable, Equatable {
         self.name = name
         self.createdAt = createdAt
         self.osVersion = osVersion
+        self.restoreImageURLString = restoreImageURLString
         self.memorySizeInGiB = memorySizeInGiB
         self.diskSizeInGiB = diskSizeInGiB
         self.vmBundlePath = vmBundlePath
@@ -57,6 +60,7 @@ struct MachineProfile: Identifiable, Codable, Equatable {
                   name: record.name,
                   createdAt: record.createdAt,
                   osVersion: record.osVersion,
+                  restoreImageURLString: record.restoreImageURLString,
                   memorySizeInGiB: record.memorySizeInGiB,
                   diskSizeInGiB: record.diskSizeInGiB,
                   vmBundlePath: record.vmBundlePath,
@@ -70,6 +74,14 @@ struct MachineProfile: Identifiable, Codable, Equatable {
 
     var vmBundleURL: URL {
         URL(fileURLWithPath: vmBundlePath)
+    }
+
+    var restoreImageURL: URL? {
+        guard let restoreImageURLString else {
+            return nil
+        }
+
+        return URL(string: restoreImageURLString)
     }
 
     var auxiliaryStorageURL: URL {
@@ -107,4 +119,3 @@ struct MachineProfile: Identifiable, Codable, Equatable {
             .map(\.lastPathComponent)
     }
 }
-

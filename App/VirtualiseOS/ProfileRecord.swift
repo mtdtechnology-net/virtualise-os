@@ -15,6 +15,7 @@ final class ProfileRecord {
     var name: String
     var createdAt: Date
     var osVersion: String?
+    var restoreImageURLString: String?
     var memorySizeInGiB: Int
     var diskSizeInGiB: Int
     var vmBundlePath: String
@@ -30,6 +31,7 @@ final class ProfileRecord {
         name = profile.name
         createdAt = profile.createdAt
         osVersion = profile.osVersion
+        restoreImageURLString = profile.restoreImageURLString
         memorySizeInGiB = profile.memorySizeInGiB
         diskSizeInGiB = profile.diskSizeInGiB
         vmBundlePath = profile.vmBundlePath
@@ -45,6 +47,7 @@ final class ProfileRecord {
         name = profile.name
         createdAt = profile.createdAt
         osVersion = profile.osVersion
+        restoreImageURLString = profile.restoreImageURLString
         memorySizeInGiB = profile.memorySizeInGiB
         diskSizeInGiB = profile.diskSizeInGiB
         vmBundlePath = profile.vmBundlePath
@@ -56,4 +59,3 @@ final class ProfileRecord {
         statusDetail = profile.statusDetail
     }
 }
-

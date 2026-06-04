@@ -208,6 +208,26 @@ jobs:
           git config user.name "${RELEASE_BOT_NAME:-github-actions[bot]}"
           git config user.email "${RELEASE_BOT_EMAIL:-github-actions[bot]@users.noreply.github.com}"
 
+      - name: Verify release bot token permissions
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::RELEASE_BOT_TOKEN is not set."
+            exit 1
+          fi
+
+          ACTOR="$(gh api user --jq '.login')"
+          CAN_PUSH="$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.permissions.push // false')"
+
+          if [ "$CAN_PUSH" != "true" ]; then
+            echo "::error::RELEASE_BOT_TOKEN authenticates as ${ACTOR}, but that account/token does not have push access to ${GITHUB_REPOSITORY}."
+            echo "::error::Grant the account write access to the repository, make sure the token has Contents: Read and write, and authorize/approve the token for the organization if required."
+            exit 1
+          fi
+
+          echo "Release bot token authenticates as ${ACTOR} and has repository push permission."
+
       - name: Ensure tag does not exist
         env:
           TAG: ${{ needs.version.outputs.tag }}

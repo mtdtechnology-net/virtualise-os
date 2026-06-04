@@ -9,6 +9,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+### Changed
+
+### Fixed
+
+---
+
+## [0.0.10] - 2026-06-04
+
+### Added
+
 - Added a SwiftLint code quality job to the CI workflow.
 - Added a repository SwiftLint configuration scoped to the `App` source tree.
 - Added open-source project documentation, contribution guidance, security reporting guidance, issue templates, and attribution notice.
@@ -142,7 +152,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Fixed the Xcode project `Info.plist` path after the source layout refactor.
 
-[Unreleased]: https://github.com/mtdtechnology-net/virtualization-macos/compare/v0.0.8...HEAD
+[Unreleased]: https://github.com/mtdtechnology-net/virtualization-macos/compare/v0.0.10...HEAD
+[0.0.10]: https://github.com/mtdtechnology-net/virtualization-macos/compare/v0.0.9...v0.0.10
 [0.0.8]: https://github.com/mtdtechnology-net/virtualization-macos/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/mtdtechnology-net/virtualization-macos/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/mtdtechnology-net/virtualization-macos/compare/v0.0.5...v0.0.6

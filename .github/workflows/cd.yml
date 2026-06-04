@@ -192,6 +192,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
+          token: ${{ secrets.RELEASE_BOT_TOKEN }}
 
       - name: Download DMG artifact
         uses: actions/download-artifact@v4
@@ -200,9 +201,12 @@ jobs:
           path: ${{ runner.temp }}/release-assets
 
       - name: Configure Git
+        env:
+          RELEASE_BOT_NAME: ${{ vars.RELEASE_BOT_NAME }}
+          RELEASE_BOT_EMAIL: ${{ vars.RELEASE_BOT_EMAIL }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "${RELEASE_BOT_NAME:-github-actions[bot]}"
+          git config user.email "${RELEASE_BOT_EMAIL:-github-actions[bot]@users.noreply.github.com}"
 
       - name: Ensure tag does not exist
         env:
@@ -310,7 +314,7 @@ jobs:
 
       - name: Create GitHub release and upload DMG
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
           TAG: ${{ needs.version.outputs.tag }}
           VERSION: ${{ needs.version.outputs.version }}
           DMG_NAME: ${{ needs.build.outputs.dmg_name }}

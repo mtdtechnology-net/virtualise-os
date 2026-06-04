@@ -13,6 +13,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  code_quality:
+    name: Code Quality
+    runs-on: mac-mini
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Ensure Homebrew on PATH
+        run: |
+          if [ -x /opt/homebrew/bin/brew ]; then
+            echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+            echo "/opt/homebrew/sbin" >> "$GITHUB_PATH"
+          elif [ -x /usr/local/bin/brew ]; then
+            echo "/usr/local/bin" >> "$GITHUB_PATH"
+            echo "/usr/local/sbin" >> "$GITHUB_PATH"
+          fi
+
+      - name: Run SwiftLint
+        uses: mtdtechnology-net/github-actions/.github/actions/swiftlint@1.0.7
+        with:
+          arguments: "--config .swiftlint.yml --reporter json --no-cache"
+
   build:
     name: Build VirtualiseOS
     runs-on: mac-mini

@@ -2,6 +2,10 @@
 #
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
 
+## macOS metadata
+.DS_Store
+**/.DS_Store
+
 ## User settings
 xcuserdata/
 
@@ -12,6 +16,14 @@ xcuserdata/
 *.ipa
 *.dSYM.zip
 *.dSYM
+*.dmg
+*.xcarchive
+
+## Build output
+build/
+builds/
+dist/
+DerivedData/
 
 ## Playgrounds
 timeline.xctimeline

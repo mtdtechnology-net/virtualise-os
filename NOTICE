@@ -1,0 +1,9 @@
+VirtualiseOS
+Copyright 2026 M.T.D.Technology SRL
+
+Portions of this project are derived from Apple's "Running macOS in a virtual machine on Apple silicon" sample code.
+
+Apple sample code copyright:
+Copyright 2025 Apple Inc.
+
+See LICENSE.txt for the Apple sample code license.

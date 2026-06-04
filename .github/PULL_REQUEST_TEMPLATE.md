@@ -32,3 +32,10 @@ Issue Number: N/A
 ## Other information
 
 <!-- Any other information that is important to this PR such as screenshots of how the component looks before and after the change. -->
+
+## Checklist
+
+- [ ] I built the `VirtualiseOS-Swift` scheme or explained why it was not run.
+- [ ] I ran SwiftLint or explained why it was not run.
+- [ ] I updated `CHANGELOG.md` for notable user-facing changes.
+- [ ] I did not commit VM bundles, restore images, build artifacts, archives, DMGs, or `.DS_Store` files.

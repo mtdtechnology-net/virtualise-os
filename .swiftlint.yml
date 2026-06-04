@@ -1,0 +1,93 @@
+disabled_rules: # rule identifiers to exclude from running
+  - todo
+  - block_based_kvo
+  - inert_defer
+  - opening_brace
+opt_in_rules: # some rules are only opt-in
+  # - closure_end_indentation
+  # - closure_spacing
+  # - comments_space
+  # - comments_capitalized_ignore_possible_code
+  # - comments_capitalized_find_possible_code
+  # - empty_count
+  # - explicit_init
+  # - explicit_failure_calls
+  # - extension_access_modifier
+  # - fatal_error_message
+  # - first_where
+  # - force_cast
+  # - force_unwrapping
+  # - implicitly_unwrapped_optional
+  # - missing_docs
+  # - multiline_parameters
+  # - multiple_empty_lines
+  # - nesting
+  # - number_separator
+  # - operator_usage_whitespace
+  - overridden_super_call
+  # - private_outlet
+  # - prohibited_super_call
+  # - protocol_property_accessors_order
+  # - redundant_nil_coalescing
+  # - sorted_imports
+  - syntactic_sugar
+  # - vertical_parameter_alignment_on_call
+  # - vertical_whitespace
+
+cyclomatic_complexity:
+  ignores_case_statements: false
+  warning: 15
+  error: 16
+
+identifier_name:
+  allowed_symbols: "_"
+  min_length: 2
+  max_length:
+    warning: 90
+    error: 1000
+  excluded:
+    - id
+    - vc
+
+trailing_whitespace:
+  ignores_empty_lines: true
+
+trailing_comma:
+  mandatory_comma: true
+
+line_length:
+  warning: 350
+  error: 500
+  ignores_comments: true
+  ignores_urls: true
+
+type_body_length:
+  warning: 500
+  error: 2000
+
+file_length:
+  warning: 600
+  error: 2000
+
+force_cast: warning # implicitly
+force_try: warning # implicitly
+
+included: # paths to include during linting. `--path` is ignored if present.
+  - App
+
+excluded:
+  - .build
+  - Pods
+  - builds
+  - Vendors
+  - fastlane
+  - Package.swift
+
+colon:
+  severity: error
+comma: error
+# empty_count: error
+legacy_constant: error
+legacy_constructor: error
+trailing_newline: error
+trailing_semicolon: error

@@ -12,8 +12,6 @@ import AppKit
 #endif
 import Virtualization
 
-#if arch(arm64)
-
 struct MacOSVirtualMachineConfigurationHelper {
     static let memorySizeInGiBUserDefaultsKey = "VirtualMachineMemorySizeInGiB"
     static let sharedDirectoryBookmarkUserDefaultsKey = "SharedDirectoryBookmark"
@@ -190,4 +188,3 @@ struct MacOSVirtualMachineConfigurationHelper {
     }
 }
 
-#endif

@@ -6,8 +6,6 @@
 //  Copyright © 2026 Apple. All rights reserved.
 //
 
-#if arch(arm64)
-
 enum BundleStatus: String, Codable, CaseIterable {
     case notInstalled
     case incomplete
@@ -39,5 +37,3 @@ enum BundleStatus: String, Codable, CaseIterable {
         }
     }
 }
-
-#endif

@@ -9,8 +9,6 @@
 import Foundation
 import SwiftData
 
-#if arch(arm64)
-
 @Model
 final class ProfileRecord {
     @Attribute(.unique) var id: UUID
@@ -59,4 +57,3 @@ final class ProfileRecord {
     }
 }
 
-#endif

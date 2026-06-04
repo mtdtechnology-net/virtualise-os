@@ -9,8 +9,6 @@
 import Foundation
 import SwiftData
 
-#if arch(arm64)
-
 struct MachineProfile: Identifiable, Codable, Equatable {
     let id: UUID
     var name: String
@@ -110,5 +108,3 @@ struct MachineProfile: Identifiable, Codable, Equatable {
     }
 }
 
-
-#endif

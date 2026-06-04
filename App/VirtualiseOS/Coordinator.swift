@@ -12,7 +12,7 @@ import Foundation
 import SwiftData
 import Virtualization
 
-final class Coordinator: NSObject, ObservableObject, URLSessionDownloadDelegate {
+final class Coordinator: NSObject, ObservableObject {
 
     @Published private(set) var setupViewModel: SetupViewModel?
     @Published private(set) var displayedVirtualMachine: VZVirtualMachine?
@@ -1590,3 +1590,7 @@ final class Coordinator: NSObject, ObservableObject, URLSessionDownloadDelegate 
         return .terminateNow
     }
 }
+
+#if arch(arm64)
+extension Coordinator: URLSessionDownloadDelegate {}
+#endif

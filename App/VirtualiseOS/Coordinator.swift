@@ -1145,8 +1145,15 @@ final class Coordinator: NSObject, ObservableObject, URLSessionDownloadDelegate 
     func urlSession(_ session: URLSession,
                     downloadTask: URLSessionDownloadTask,
                     didFinishDownloadingTo location: URL) {
-        DispatchQueue.main.async { [weak self] in
-            self?.finishRestoreImageDownload(at: location)
+        do {
+            let destinationURL = try moveRestoreImageFromTemporaryLocation(location)
+            DispatchQueue.main.async { [weak self] in
+                self?.finishRestoreImageDownload(at: destinationURL)
+            }
+        } catch {
+            DispatchQueue.main.async { [weak self] in
+                self?.showInstallationFailure(error.localizedDescription)
+            }
         }
     }
 
@@ -1194,28 +1201,32 @@ final class Coordinator: NSObject, ObservableObject, URLSessionDownloadDelegate 
                               progress: min(percentage * 0.5, 50))
     }
 
-    private func finishRestoreImageDownload(at location: URL) {
+    private func moveRestoreImageFromTemporaryLocation(_ location: URL) throws -> URL {
+        let destinationURL = restoreImageURL
+        let destinationDirectoryURL = destinationURL.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: destinationDirectoryURL, withIntermediateDirectories: true)
+
+        if FileManager.default.fileExists(atPath: destinationURL.path) {
+            try FileManager.default.removeItem(at: destinationURL)
+        }
+
+        try FileManager.default.moveItem(at: location, to: destinationURL)
+        return destinationURL
+    }
+
+    private func finishRestoreImageDownload(at downloadedRestoreImageURL: URL) {
         if let restoreImageDownloadProfileID,
            selectedProfileID != restoreImageDownloadProfileID,
            let profile = virtualMachineProfiles.first(where: { $0.id == restoreImageDownloadProfileID }) {
             selectProfile(profile)
         }
 
-        do {
-            if FileManager.default.fileExists(atPath: restoreImageURL.path) {
-                try FileManager.default.removeItem(at: restoreImageURL)
-            }
-
-            try FileManager.default.moveItem(at: location, to: restoreImageURL)
-            restoreImageDownloadSession?.finishTasksAndInvalidate()
-            restoreImageDownloadSession = nil
-            restoreImageDownloadTask = nil
-            restoreImageDownloadMode = nil
-            restoreImageDownloadProfileID = nil
-            installMacOS(from: restoreImageURL)
-        } catch {
-            showInstallationFailure(error.localizedDescription)
-        }
+        restoreImageDownloadSession?.finishTasksAndInvalidate()
+        restoreImageDownloadSession = nil
+        restoreImageDownloadTask = nil
+        restoreImageDownloadMode = nil
+        restoreImageDownloadProfileID = nil
+        installMacOS(from: downloadedRestoreImageURL)
     }
 
     private func installMacOS(from ipswURL: URL) {

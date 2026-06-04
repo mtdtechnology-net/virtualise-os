@@ -575,7 +575,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Swift/VirtualiseOS/Info.plist;
+				INFOPLIST_FILE = App/VirtualiseOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Virtualize;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Allow for using audio input devices.";

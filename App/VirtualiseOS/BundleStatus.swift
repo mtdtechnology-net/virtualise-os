@@ -19,21 +19,21 @@ enum BundleStatus: String, Codable, CaseIterable {
     var displayName: String {
         switch self {
         case .notInstalled:
-            return MachineConfigurationHelper.localized("Not installed")
+            return "Not installed".localized
         case .incomplete:
-            return MachineConfigurationHelper.localized("Incomplete")
+            return "Incomplete".localized
         case .installing:
-            return MachineConfigurationHelper.localized("Installing")
+            return "Installing".localized
         case .installed:
-            return MachineConfigurationHelper.localized("Ready")
+            return "Ready".localized
         case .starting:
-            return MachineConfigurationHelper.localized("Starting")
+            return "Starting".localized
         case .running:
-            return MachineConfigurationHelper.localized("Running")
+            return "Running".localized
         case .stopped:
-            return MachineConfigurationHelper.localized("Stopped")
+            return "Stopped".localized
         case .failed:
-            return MachineConfigurationHelper.localized("Failed")
+            return "Failed".localized
         }
     }
 }

@@ -24,7 +24,7 @@ class MacOSVirtualMachineInstaller: NSObject {
     init(diskImageSizeInGiB: UInt64 = MacOSVirtualMachineInstaller.defaultDiskImageSizeInGiB) {
         guard diskImageSizeInGiB > 0,
               diskImageSizeInGiB <= UInt64(Int64.max) / MacOSVirtualMachineInstaller.bytesPerGiB else {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("The disk image size must be a positive whole number of GiB."))
+            MachineConfigurationHelper.showErrorAndExit("The disk image size must be a positive whole number of GiB.".localized)
         }
 
         self.diskImageSizeInGiB = diskImageSizeInGiB
@@ -44,7 +44,7 @@ class MacOSVirtualMachineInstaller: NSObject {
         VZMacOSRestoreImage.load(from: ipswURL, completionHandler: { [self](result: Result<VZMacOSRestoreImage, Error>) in
             switch result {
                 case let .failure(error):
-                    MacOSVirtualMachineConfigurationHelper.showErrorAndExit(error.localizedDescription)
+                    MachineConfigurationHelper.showErrorAndExit(error.localizedDescription)
 
                 case let .success(restoreImage):
                     installMacOS(restoreImage: restoreImage, completionHandler: completionHandler)
@@ -56,11 +56,11 @@ class MacOSVirtualMachineInstaller: NSObject {
 
     private func installMacOS(restoreImage: VZMacOSRestoreImage, completionHandler: (() -> Void)?) {
         guard let macOSConfiguration = restoreImage.mostFeaturefulSupportedConfiguration else {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("No supported configuration available."))
+            MachineConfigurationHelper.showErrorAndExit("No supported configuration available.".localized)
         }
 
         if !macOSConfiguration.hardwareModel.isSupported {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("macOSConfiguration configuration isn't supported on the current host."))
+            MachineConfigurationHelper.showErrorAndExit("macOSConfiguration configuration isn't supported on the current host.".localized)
         }
 
         DispatchQueue.main.async { [self] in
@@ -77,7 +77,7 @@ class MacOSVirtualMachineInstaller: NSObject {
         guard let auxiliaryStorage = try? VZMacAuxiliaryStorage(creatingStorageAt: auxiliaryStorageURL,
                                                                     hardwareModel: macOSConfiguration.hardwareModel,
                                                                           options: []) else {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Failed to create auxiliary storage."))
+            MachineConfigurationHelper.showErrorAndExit("Failed to create auxiliary storage.".localized)
         }
         macPlatformConfiguration.auxiliaryStorage = auxiliaryStorage
         macPlatformConfiguration.hardwareModel = macOSConfiguration.hardwareModel
@@ -97,28 +97,28 @@ class MacOSVirtualMachineInstaller: NSObject {
         let virtualMachineConfiguration = VZVirtualMachineConfiguration()
 
         virtualMachineConfiguration.platform = createMacPlatformConfiguration(macOSConfiguration: macOSConfiguration)
-        virtualMachineConfiguration.cpuCount = MacOSVirtualMachineConfigurationHelper.computeCPUCount()
+        virtualMachineConfiguration.cpuCount = MachineConfigurationHelper.computeCPUCount()
         if virtualMachineConfiguration.cpuCount < macOSConfiguration.minimumSupportedCPUCount {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("CPUCount isn't supported by the macOS configuration."))
+            MachineConfigurationHelper.showErrorAndExit("CPUCount isn't supported by the macOS configuration.".localized)
         }
 
-        virtualMachineConfiguration.memorySize = MacOSVirtualMachineConfigurationHelper.computeMemorySize()
+        virtualMachineConfiguration.memorySize = MachineConfigurationHelper.computeMemorySize()
         if virtualMachineConfiguration.memorySize < macOSConfiguration.minimumSupportedMemorySize {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("memorySize isn't supported by the macOS configuration."))
+            MachineConfigurationHelper.showErrorAndExit("memorySize isn't supported by the macOS configuration.".localized)
         }
 
         // Create the VM disk image.
         createDiskImage()
 
-        virtualMachineConfiguration.bootLoader = MacOSVirtualMachineConfigurationHelper.createBootLoader()
+        virtualMachineConfiguration.bootLoader = MachineConfigurationHelper.createBootLoader()
 
-        virtualMachineConfiguration.audioDevices = [MacOSVirtualMachineConfigurationHelper.createSoundDeviceConfiguration()]
-        virtualMachineConfiguration.graphicsDevices = [MacOSVirtualMachineConfigurationHelper.createGraphicsDeviceConfiguration()]
-        virtualMachineConfiguration.networkDevices = [MacOSVirtualMachineConfigurationHelper.createNetworkDeviceConfiguration()]
-        virtualMachineConfiguration.storageDevices = [MacOSVirtualMachineConfigurationHelper.createBlockDeviceConfiguration()]
+        virtualMachineConfiguration.audioDevices = [MachineConfigurationHelper.createSoundDeviceConfiguration()]
+        virtualMachineConfiguration.graphicsDevices = [MachineConfigurationHelper.createGraphicsDeviceConfiguration()]
+        virtualMachineConfiguration.networkDevices = [MachineConfigurationHelper.createNetworkDeviceConfiguration()]
+        virtualMachineConfiguration.storageDevices = [MachineConfigurationHelper.createBlockDeviceConfiguration()]
 
-        virtualMachineConfiguration.pointingDevices = [MacOSVirtualMachineConfigurationHelper.createPointingDeviceConfiguration()]
-        virtualMachineConfiguration.keyboards = [MacOSVirtualMachineConfigurationHelper.createKeyboardConfiguration()]
+        virtualMachineConfiguration.pointingDevices = [MachineConfigurationHelper.createPointingDeviceConfiguration()]
+        virtualMachineConfiguration.keyboards = [MachineConfigurationHelper.createKeyboardConfiguration()]
 
         try! virtualMachineConfiguration.validate()
 
@@ -139,7 +139,7 @@ class MacOSVirtualMachineInstaller: NSObject {
         NSLog("Starting installation.")
         installer.install(completionHandler: { (result: Result<Void, Error>) in
             if case let .failure(error) = result {
-                MacOSVirtualMachineConfigurationHelper.showErrorAndExit(error.localizedDescription)
+                MachineConfigurationHelper.showErrorAndExit(error.localizedDescription)
             } else {
                 NSLog("Installation succeeded.")
                 completionHandler?()
@@ -156,7 +156,7 @@ class MacOSVirtualMachineInstaller: NSObject {
         do {
             try FileManager.default.createDirectory(at: vmBundleURL, withIntermediateDirectories: true)
         } catch {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Failed to create VM.bundle."))
+            MachineConfigurationHelper.showErrorAndExit("Failed to create VM.bundle.".localized)
         }
     }
 
@@ -181,27 +181,27 @@ class MacOSVirtualMachineInstaller: NSObject {
                                                       diskImageURL.path])
             process.waitUntilExit()
             if process.terminationStatus != 0 {
-                MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Failed to create the disk image."))
+                MachineConfigurationHelper.showErrorAndExit("Failed to create the disk image.".localized)
             }
         } catch {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Failed to launch diskutil: %@", error.localizedDescription))
+            MachineConfigurationHelper.showErrorAndExit("Failed to launch diskutil: %@".localized(error.localizedDescription))
         }
     }
 
     private func createRAWDiskImage() {
         let diskFd = open(diskImageURL.path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR)
         if diskFd == -1 {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Cannot create disk image."))
+            MachineConfigurationHelper.showErrorAndExit("Cannot create disk image.".localized)
         }
 
         var result = ftruncate(diskFd, off_t(diskImageSizeInBytes))
         if result != 0 {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("ftruncate() failed."))
+            MachineConfigurationHelper.showErrorAndExit("ftruncate() failed.".localized)
         }
 
         result = close(diskFd)
         if result != 0 {
-            MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Failed to close the disk image."))
+            MachineConfigurationHelper.showErrorAndExit("Failed to close the disk image.".localized)
         }
     }
 

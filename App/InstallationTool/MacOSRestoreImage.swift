@@ -21,7 +21,7 @@ class MacOSRestoreImage: NSObject {
         VZMacOSRestoreImage.fetchLatestSupported { [self](result: Result<VZMacOSRestoreImage, Error>) in
             switch result {
                 case let .failure(error):
-                    MacOSVirtualMachineConfigurationHelper.showErrorAndExit(error.localizedDescription)
+                    MachineConfigurationHelper.showErrorAndExit(error.localizedDescription)
 
                 case let .success(restoreImage):
                     NSLog("Latest supported macOS restore image: \(restoreImage.operatingSystemVersion) (\(restoreImage.buildVersion)).")
@@ -35,19 +35,19 @@ class MacOSRestoreImage: NSObject {
     private func downloadRestoreImage(restoreImage: VZMacOSRestoreImage, completionHandler: @escaping () -> Void) {
         let downloadTask = URLSession.shared.downloadTask(with: restoreImage.url) { localURL, response, error in
             if let error = error {
-                MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Download failed. %@.", error.localizedDescription))
+                MachineConfigurationHelper.showErrorAndExit("Download failed. %@.".localized(error.localizedDescription))
             }
 
             if FileManager.default.fileExists(atPath: restoreImageURL.path) {
                 do {
                     try FileManager.default.removeItem(at: restoreImageURL)
                 } catch {
-                    MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Failed to remove existing restore image at %@.", restoreImageURL.path))
+                    MachineConfigurationHelper.showErrorAndExit("Failed to remove existing restore image at %@.".localized(restoreImageURL.path))
                 }
             }
 
             guard (try? FileManager.default.moveItem(at: localURL!, to: restoreImageURL)) != nil else {
-                MacOSVirtualMachineConfigurationHelper.showErrorAndExit(MacOSVirtualMachineConfigurationHelper.localized("Failed to move downloaded restore image to %@.", restoreImageURL.path))
+                MachineConfigurationHelper.showErrorAndExit("Failed to move downloaded restore image to %@.".localized(restoreImageURL.path))
             }
 
             completionHandler()

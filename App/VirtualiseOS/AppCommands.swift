@@ -14,32 +14,32 @@ struct AppCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
 #if arch(arm64)
-            Button(MachineConfigurationHelper.localized("New Virtual Machine...")) {
+            Button("New Virtual Machine...".localized) {
                 coordinator.showCreateProfileFlow()
             }
             .keyboardShortcut("n", modifiers: .command)
 #endif
         }
 
-        CommandMenu(MachineConfigurationHelper.localized("Virtual Machine")) {
+        CommandMenu("Virtual Machine".localized) {
 #if arch(arm64)
-            Button(MachineConfigurationHelper.localized("Start Selected VM")) {
+            Button("Start Selected VM".localized) {
                 coordinator.startSelectedVirtualMachine()
             }
             .keyboardShortcut("r", modifiers: .command)
             .disabled(!coordinator.canStartSelectedProfile)
 
-            Button(MachineConfigurationHelper.localized("Download and Install macOS")) {
+            Button("Download and Install macOS".localized) {
                 coordinator.installSelectedVirtualMachine()
             }
             .disabled(!coordinator.canInstallSelectedProfile)
 
-            Button(MachineConfigurationHelper.localized("Cancel Installing")) {
+            Button("Cancel Installing".localized) {
                 coordinator.cancelSelectedVirtualMachineInstallation()
             }
             .disabled(!coordinator.canCancelSelectedProfileInstallation)
 
-            Button(MachineConfigurationHelper.localized("Stop VM and Show Settings")) {
+            Button("Stop VM and Show Settings".localized) {
                 coordinator.stopVirtualMachineAndShowSettings()
             }
             .keyboardShortcut(".", modifiers: [.command, .shift])
@@ -47,28 +47,28 @@ struct AppCommands: Commands {
 
             Divider()
 
-            Button(MachineConfigurationHelper.localized("Choose VM Location...")) {
+            Button("Choose VM Location...".localized) {
                 coordinator.chooseVMLocation()
             }
             .disabled(coordinator.canStopVirtualMachine)
 
-            Button(MachineConfigurationHelper.localized("Choose Shared Folder...")) {
+            Button("Choose Shared Folder...".localized) {
                 coordinator.chooseSharedFolder()
             }
 
             Divider()
 
-            Button(MachineConfigurationHelper.localized("Refresh VM Status")) {
+            Button("Refresh VM Status".localized) {
                 coordinator.refreshVirtualMachineLibrary()
             }
             .keyboardShortcut("r", modifiers: [.command, .shift])
 
-            Button(MachineConfigurationHelper.localized("Delete Selected VM")) {
+            Button("Delete Selected VM".localized) {
                 coordinator.deleteSelectedProfile()
             }
             .disabled(!coordinator.canDeleteSelectedProfile)
 #else
-            Text(MacOSVirtualMachineConfigurationHelper.localized("VirtualiseOS requires Apple silicon."))
+            Text("VirtualiseOS requires Apple silicon.".localized)
 #endif
         }
     }

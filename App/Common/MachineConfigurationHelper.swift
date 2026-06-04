@@ -19,14 +19,6 @@ struct MachineConfigurationHelper {
 
     private static var activeSharedDirectoryURL: URL?
 
-    static func localized(_ key: String) -> String {
-        return NSLocalizedString(key, comment: "")
-    }
-
-    static func localized(_ key: String, _ arguments: CVarArg...) -> String {
-        return String(format: localized(key), arguments: arguments)
-    }
-
     static func showErrorAndExit(_ message: String) -> Never {
         NSLog(message)
 
@@ -34,10 +26,10 @@ struct MachineConfigurationHelper {
         if Bundle.main.bundleURL.pathExtension == "app" {
             let showAlert = {
                 let alert = NSAlert()
-                alert.messageText = localized("VirtualiseOS Error")
+                alert.messageText = "VirtualiseOS Error".localized
                 alert.informativeText = message
                 alert.alertStyle = .critical
-                alert.addButton(withTitle: localized("Quit"))
+                alert.addButton(withTitle: "Quit".localized)
                 alert.runModal()
             }
 
@@ -78,7 +70,7 @@ struct MachineConfigurationHelper {
 
     static func createBlockDeviceConfiguration() -> VZVirtioBlockDeviceConfiguration {
         guard let diskImageAttachment = try? VZDiskImageStorageDeviceAttachment(url: diskImageURL, readOnly: false) else {
-            showErrorAndExit(localized("Failed to create Disk image."))
+            showErrorAndExit("Failed to create Disk image.".localized)
         }
         let disk = VZVirtioBlockDeviceConfiguration(attachment: diskImageAttachment)
         return disk
@@ -152,7 +144,7 @@ struct MachineConfigurationHelper {
         try? generatedAddress.write(to: macAddressURL, atomically: true, encoding: .utf8)
 
         guard let macAddress = VZMACAddress(string: generatedAddress) else {
-            showErrorAndExit(localized("Failed to create generated MAC address."))
+            showErrorAndExit("Failed to create generated MAC address.".localized)
         }
 
         return macAddress
@@ -189,4 +181,3 @@ struct MachineConfigurationHelper {
     }
 #endif
 }
-

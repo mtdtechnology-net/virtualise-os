@@ -17,7 +17,7 @@ struct SetupView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 18) {
-                Text(MachineConfigurationHelper.localized("Preparing VirtualiseOS"))
+                Text("Preparing VirtualiseOS".localized)
                     .font(.system(size: 30, weight: .semibold))
                     .foregroundStyle(.white)
                 
@@ -52,7 +52,7 @@ struct SetupView: View {
                         }
 
                         if model.isCancelActionVisible {
-                            Button(MachineConfigurationHelper.localized("Cancel Installing")) {
+                            Button("Cancel Installing".localized) {
                                 model.cancelActionHandler?()
                             }
                             .buttonStyle(SetupButtonStyle())
@@ -92,7 +92,7 @@ struct SetupView: View {
     private var settingsRows: some View {
         VStack(spacing: 16) {
             HStack {
-                Text(MachineConfigurationHelper.localized("Memory"))
+                Text("Memory".localized)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white)
                 
@@ -100,7 +100,7 @@ struct SetupView: View {
                 
                 Picker("", selection: $model.selectedMemorySizeInGiB) {
                     ForEach(model.memoryOptionsInGiB, id: \.self) { memorySizeInGiB in
-                        Text(MachineConfigurationHelper.localized("%d GB", memorySizeInGiB))
+                        Text("%d GB".localized(memorySizeInGiB))
                             .tag(memorySizeInGiB)
                     }
                 }
@@ -113,11 +113,11 @@ struct SetupView: View {
             }
             .frame(width: 420)
             
-            setupLocationRow(title: MachineConfigurationHelper.localized("VM Location"),
+            setupLocationRow(title: "VM Location".localized,
                              path: model.vmLocationDescription,
                              action: { model.chooseVMLocationHandler?() })
             
-            setupLocationRow(title: MachineConfigurationHelper.localized("Shared Folder"),
+            setupLocationRow(title: "Shared Folder".localized,
                              path: model.sharedFolderDescription,
                              action: { model.chooseSharedFolderHandler?() })
         }
@@ -132,7 +132,7 @@ struct SetupView: View {
                 
                 Spacer()
                 
-                Button(MachineConfigurationHelper.localized("Choose Folder..."), action: action)
+                Button("Choose Folder...".localized, action: action)
                     .buttonStyle(SetupButtonStyle())
                     .disabled(!model.areControlsEnabled)
                     .frame(width: 168, height: 34)

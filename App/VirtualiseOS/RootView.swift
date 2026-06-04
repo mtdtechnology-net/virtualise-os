@@ -73,25 +73,3 @@ struct RootView: View {
 #endif
 }
 
-private struct SplashScreenView: View {
-    var body: some View {
-        ZStack {
-            Color.accentColor.ignoresSafeArea()
-
-            VStack(spacing: 22) {
-                Image("logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 180, height: 88)
-
-                Text("VirtualiseOS")
-                    .font(.system(size: 34, weight: .semibold))
-                    .foregroundStyle(.white)
-
-                ProgressView()
-                    .controlSize(.large)
-                    .tint(.blue)
-            }
-        }
-    }
-}

@@ -31,6 +31,9 @@ struct VirtualMachineWindowView: View {
                 }
             }
         }
+        .onDisappear {
+            coordinator.virtualMachineWindowDidClose()
+        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(MacOSVirtualMachineConfigurationHelper.localized("Stop VM")) {

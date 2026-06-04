@@ -649,7 +649,7 @@ final class Coordinator: NSObject, ObservableObject {
         }
         virtualMachineResponder?.guestDidStopHandler = { [weak self] in
             DispatchQueue.main.async {
-                self?.returnToSettingsScreen()
+                self?.returnToSettingsScreen(markAsStopped: true)
             }
         }
         virtualMachine.delegate = virtualMachineResponder
@@ -724,7 +724,7 @@ final class Coordinator: NSObject, ObservableObject {
 
     func stopVirtualMachineAndShowSettings() {
         guard let virtualMachine else {
-            returnToSettingsScreen()
+            returnToSettingsScreen(markAsStopped: true)
             return
         }
 
@@ -736,7 +736,7 @@ final class Coordinator: NSObject, ObservableObject {
                         return
                     }
 
-                    self?.returnToSettingsScreen()
+                    self?.returnToSettingsScreen(markAsStopped: true)
                 }
             }
         } else {
@@ -744,7 +744,32 @@ final class Coordinator: NSObject, ObservableObject {
         }
     }
 
-    private func returnToSettingsScreen() {
+    func virtualMachineWindowDidClose() {
+        guard displayedVirtualMachine != nil || virtualMachine != nil else {
+            returnToSettingsScreen(markAsStopped: true)
+            return
+        }
+
+        if let virtualMachine, virtualMachine.canStop {
+            virtualMachine.stop { [weak self] error in
+                DispatchQueue.main.async {
+                    if let error {
+                        self?.showInformationAlert(self?.virtualMachineErrorMessage(prefixKey: "Virtual machine failed to stop with %@", error: error) ?? error.localizedDescription)
+                    }
+                    self?.returnToSettingsScreen(markAsStopped: true)
+                }
+            }
+        } else {
+            returnToSettingsScreen(markAsStopped: true)
+        }
+    }
+
+    private func returnToSettingsScreen(markAsStopped: Bool = false) {
+        if markAsStopped {
+            updateSelectedProfile(status: .stopped,
+                                  detail: MacOSVirtualMachineConfigurationHelper.localized("Virtual machine is stopped."),
+                                  progress: 100)
+        }
         displayedVirtualMachine = nil
         isVirtualMachineVisible = false
         virtualMachine = nil

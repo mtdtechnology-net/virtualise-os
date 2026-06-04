@@ -72,4 +72,3 @@ struct RootView: View {
     }
 #endif
 }
-

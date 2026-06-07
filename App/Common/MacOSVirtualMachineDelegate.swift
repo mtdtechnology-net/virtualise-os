@@ -7,6 +7,8 @@
 //
 
 import Foundation
+
+#if arch(arm64)
 import Virtualization
 
 class MacOSVirtualMachineDelegate: NSObject, VZVirtualMachineDelegate {
@@ -23,3 +25,5 @@ class MacOSVirtualMachineDelegate: NSObject, VZVirtualMachineDelegate {
         guestDidStopHandler?()
     }
 }
+
+#endif

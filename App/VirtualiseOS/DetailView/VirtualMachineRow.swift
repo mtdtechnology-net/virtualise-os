@@ -33,7 +33,7 @@ struct VirtualMachineRow: View {
                 Spacer()
                 
                 Circle()
-                    .fill(statusColor)
+                    .fill(profile.status.color)
                     .frame(width: 8, height: 8)
             }
             
@@ -56,21 +56,6 @@ struct VirtualMachineRow: View {
         }
         
         return osVersion
-    }
-    
-    private var statusColor: Color {
-        switch profile.status {
-        case .running:
-            return .green
-        case .installing, .starting:
-            return .blue
-        case .failed, .incomplete:
-            return .orange
-        case .installed, .stopped:
-            return .gray
-        case .notInstalled:
-            return .secondary
-        }
     }
     
     private var isDarkMode: Bool {

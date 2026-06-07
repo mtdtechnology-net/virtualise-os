@@ -10,7 +10,9 @@ import Foundation
 #if canImport(AppKit)
 import AppKit
 #endif
+#if arch(arm64)
 import Virtualization
+#endif
 
 struct MachineConfigurationHelper {
     static let memorySizeInGiBUserDefaultsKey = "VirtualMachineMemorySizeInGiB"

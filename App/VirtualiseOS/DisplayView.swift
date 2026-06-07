@@ -7,6 +7,8 @@
 //
 
 import SwiftUI
+
+#if arch(arm64)
 import Virtualization
 
 struct DisplayView: NSViewRepresentable {
@@ -122,3 +124,5 @@ final class FocusableVirtualMachineView: VZVirtualMachineView {
               event.isARepeat ? "true" : "false")
     }
 }
+
+#endif

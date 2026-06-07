@@ -25,7 +25,26 @@ struct VirtualMachineDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                header
+                /// Header
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(profile.name)
+                            .font(.system(size: 34, weight: .semibold))
+                            .foregroundStyle(primaryTextStyle)
+                        Text(profile.statusDetail.isEmpty ? profile.status.displayName : profile.statusDetail)
+                            .font(.system(size: 15))
+                            .foregroundStyle(secondaryTextStyle)
+                            .lineLimit(3)
+                    }
+                    Spacer()
+                    MachineStatus(status: profile.status)
+                }
+                /// Cards
+                HStack {
+                    CardView(title: "memory".localized, subtitle: "\(profile.memorySizeInGiB) GB", color: .blue)
+                    CardView(title: "hard_drive".localized, subtitle: "\(profile.diskSizeInGiB) GB", color: .green)
+                    CardView(title: "cpu".localized, subtitle: "auto".localized, color: .orange)
+                }
                 configurationPanel
                 actionPanel
             }
@@ -35,57 +54,58 @@ struct VirtualMachineDetailView: View {
         .background(detailBackgroundColor)
     }
     
-    private var header: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(profile.name)
-                    .font(.system(size: 34, weight: .semibold))
-                    .foregroundStyle(primaryTextStyle)
-                
-                Text(profile.statusDetail.isEmpty ? profile.status.displayName : profile.statusDetail)
-                    .font(.system(size: 15))
-                    .foregroundStyle(secondaryTextStyle)
-                    .lineLimit(3)
-            }
-            
-            Spacer()
-            
-            Text(profile.status.displayName)
-                .font(.system(size: 13, weight: .semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
-                .foregroundStyle(.white)
-                .background(statusColor, in: Capsule())
-        }
-    }
-    
     private var configurationPanel: some View {
+        
         VStack(alignment: .leading, spacing: 18) {
+            
             Text("Configuration".localized)
                 .font(.headline)
                 .foregroundStyle(primaryTextStyle)
             
-            settingRow(title: "VM Location".localized, value: profile.vmBundlePath) {
-                coordinator.chooseVMLocation()
-            }
-            
-            Picker("Memory".localized, selection: memoryBinding) {
-                ForEach([4, 6, 8, 12, 16, 24, 32], id: \.self) { value in
-                    Text("%d GB".localized(value))
-                        .tag(value)
+            ActionRowView(
+                title: "VM Location".localized,
+                value: profile.vmBundlePath,
+                status: profile.status) {
+                    coordinator.chooseVMLocation()
                 }
-            }
-            .pickerStyle(.menu)
-            .disabled(profile.status == .running || profile.status == .installing || profile.status == .starting)
             
-            Stepper(value: diskSizeBinding, in: 32...2048, step: 16) {
-                Text("Hard Disk: %d GB".localized(profile.diskSizeInGiB))
-            }
-            .disabled(profile.status != .notInstalled && profile.status != .incomplete && profile.status != .failed)
+            Divider()
             
-            settingRow(title: "Shared Folder".localized,
-                       value: profile.sharedFolderPath ?? "No shared folder selected".localized) {
-                coordinator.chooseSharedFolder()
+            ActionRowView(
+                title: "Shared Folder".localized,
+                value: profile.sharedFolderPath ?? "No shared folder selected".localized,
+                status: profile.status) {
+                    coordinator.chooseSharedFolder()
+                }
+            
+            Divider()
+            
+            HStack {
+                Text("Memory".localized)
+                    .font(Font.body.bold())
+                Spacer()
+                Picker("", selection: memoryBinding) {
+                    ForEach([4, 6, 8, 12, 16, 24, 32], id: \.self) { value in
+                        Text("%d GB".localized(value))
+                            .tag(value)
+                    }
+                }
+                .pickerStyle(.menu)
+                .disabled(profile.status == .running || profile.status == .installing || profile.status == .starting)
+            }
+            
+            Divider()
+            
+            HStack {
+                Text("Hard Disk Size".localized(profile.diskSizeInGiB))
+                    .font(Font.body.bold())
+                Spacer()
+                Text("%d GB".localized(profile.diskSizeInGiB))
+                    .font(Font.body.bold())
+                Stepper(value: diskSizeBinding, in: diskSizeRange, step: 16) {
+                    
+                }
+                .disabled(!canChangeDiskSize)
             }
         }
         .padding(22)
@@ -143,27 +163,6 @@ struct VirtualMachineDetailView: View {
         .modifier(CardModifier())
     }
     
-    private func settingRow(title: String, value: String, action: @escaping () -> Void) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(title)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(primaryTextStyle)
-                Spacer()
-                Button("Choose...".localized, action: action)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
-                    .disabled(profile.status == .running || profile.status == .installing || profile.status == .starting)
-            }
-            
-            Text(value)
-                .font(.caption)
-                .foregroundStyle(secondaryTextStyle)
-                .lineLimit(1)
-                .truncationMode(.middle)
-        }
-    }
-    
     private var memoryBinding: Binding<Int> {
         Binding(get: { profile.memorySizeInGiB },
                 set: { coordinator.updateSelectedProfileMemory($0) })
@@ -172,6 +171,18 @@ struct VirtualMachineDetailView: View {
     private var diskSizeBinding: Binding<Int> {
         Binding(get: { profile.diskSizeInGiB },
                 set: { coordinator.updateSelectedProfileDiskSize($0) })
+    }
+
+    private var diskSizeRange: ClosedRange<Int> {
+        if profile.isInstalledOnDisk {
+            return profile.diskSizeInGiB...2048
+        }
+
+        return 32...2048
+    }
+
+    private var canChangeDiskSize: Bool {
+        profile.status != .running && profile.status != .installing && profile.status != .starting
     }
     
     private var primaryActionTitle: String {
@@ -206,21 +217,6 @@ struct VirtualMachineDetailView: View {
             coordinator.installSelectedVirtualMachine()
         default:
             break
-        }
-    }
-    
-    private var statusColor: Color {
-        switch profile.status {
-        case .running:
-            return .green
-        case .installing, .starting:
-            return .blue
-        case .failed, .incomplete:
-            return .orange
-        case .installed, .stopped:
-            return .gray
-        case .notInstalled:
-            return .secondary
         }
     }
     

@@ -29,6 +29,10 @@
 		1BE85F392FD20C1F00FA686B /* VirtualiseOSPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE85F382FD20C1E00FA686B /* VirtualiseOSPalette.swift */; };
 		1BE85F442FD2110400FA686B /* VirtualMachineRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE85F432FD2110200FA686B /* VirtualMachineRow.swift */; };
 		1BE85F7B2FD2150500FA686B /* CardModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE85F7A2FD2150000FA686B /* CardModifier.swift */; };
+		1BE85F7D2FD5F7CF00FA686B /* MachineStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE85F7C2FD5F7CF00FA686B /* MachineStatus.swift */; };
+		1BE85F7F2FD5F8A300FA686B /* BundleStatusColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE85F7E2FD5F89600FA686B /* BundleStatusColor.swift */; };
+		1BE85F832FD5FD9400FA686B /* CardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE85F822FD5FD9400FA686B /* CardView.swift */; };
+		1BE85F852FD60ADD00FA686B /* ActionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE85F842FD60ADD00FA686B /* ActionRowView.swift */; };
 		8F87D52126C34111000EADA4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D52026C34111000EADA4 /* AppDelegate.swift */; };
 		8F87D52326C34111000EADA4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8F87D52226C34111000EADA4 /* Assets.xcassets */; };
 		8F87D53426C341AC000EADA4 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F87D53326C341AC000EADA4 /* main.swift */; };
@@ -79,6 +83,10 @@
 		1BE85F382FD20C1E00FA686B /* VirtualiseOSPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualiseOSPalette.swift; sourceTree = "<group>"; };
 		1BE85F432FD2110200FA686B /* VirtualMachineRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualMachineRow.swift; sourceTree = "<group>"; };
 		1BE85F7A2FD2150000FA686B /* CardModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardModifier.swift; sourceTree = "<group>"; };
+		1BE85F7C2FD5F7CF00FA686B /* MachineStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachineStatus.swift; sourceTree = "<group>"; };
+		1BE85F7E2FD5F89600FA686B /* BundleStatusColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleStatusColor.swift; sourceTree = "<group>"; };
+		1BE85F822FD5FD9400FA686B /* CardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardView.swift; sourceTree = "<group>"; };
+		1BE85F842FD60ADD00FA686B /* ActionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionRowView.swift; sourceTree = "<group>"; };
 		8F87D51D26C34111000EADA4 /* VirtualiseOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtualiseOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8F87D52026C34111000EADA4 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		8F87D52226C34111000EADA4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -147,8 +155,11 @@
 		1B2FC7762FD1692300F35C41 /* Reusable */ = {
 			isa = PBXGroup;
 			children = (
+				1BE85F7E2FD5F89600FA686B /* BundleStatusColor.swift */,
 				1BE85F7A2FD2150000FA686B /* CardModifier.swift */,
 				1B2FC7772FD1692B00F35C41 /* SetupButtonStyle.swift */,
+				1BE85F7C2FD5F7CF00FA686B /* MachineStatus.swift */,
+				1BE85F822FD5FD9400FA686B /* CardView.swift */,
 			);
 			path = Reusable;
 			sourceTree = "<group>";
@@ -174,6 +185,7 @@
 				1B7C2B602FD17969000F0DB2 /* VirtualMachineLibraryView.swift */,
 				1BE85F432FD2110200FA686B /* VirtualMachineRow.swift */,
 				1BE85F342FD20B9500FA686B /* VirtualMachineDetailView.swift */,
+				1BE85F842FD60ADD00FA686B /* ActionRowView.swift */,
 			);
 			path = DetailView;
 			sourceTree = "<group>";
@@ -377,6 +389,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				1BE85F312FD1E8AC00FA686B /* CreateVirtualMachineView.swift in Sources */,
+				1BE85F832FD5FD9400FA686B /* CardView.swift in Sources */,
+				1BE85F7D2FD5F7CF00FA686B /* MachineStatus.swift in Sources */,
 				1BE85EF52FD1B7EC00FA686B /* ProfileRecord.swift in Sources */,
 				8F87D53F26C34259000EADA4 /* Path.swift in Sources */,
 				8F87D52126C34111000EADA4 /* AppDelegate.swift in Sources */,
@@ -388,10 +402,12 @@
 				1B157DA42FD0409800256E27 /* SetupViewModel.swift in Sources */,
 				1BE85F332FD202B700FA686B /* SplashScreenView.swift in Sources */,
 				1B7C2B5F2FD1783B000F0DB2 /* MachineProfile.swift in Sources */,
+				1BE85F7F2FD5F8A300FA686B /* BundleStatusColor.swift in Sources */,
 				1B157DA72FD040A000256E27 /* VirtualiseOSApp.swift in Sources */,
 				1B7C2B632FD17977000F0DB2 /* VirtualMachineWindowView.swift in Sources */,
 				1BE85F7B2FD2150500FA686B /* CardModifier.swift in Sources */,
 				1B157DAF2FD0530300256E27 /* AppCommands.swift in Sources */,
+				1BE85F852FD60ADD00FA686B /* ActionRowView.swift in Sources */,
 				1B157DAB2FD0530100256E27 /* RootView.swift in Sources */,
 				1B157DAD2FD0530200256E27 /* DisplayView.swift in Sources */,
 				1BE85F352FD20B9E00FA686B /* VirtualMachineDetailView.swift in Sources */,

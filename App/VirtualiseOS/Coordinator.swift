@@ -10,12 +10,16 @@ import Cocoa
 import Combine
 import Foundation
 import SwiftData
+#if arch(arm64)
 import Virtualization
+#endif
 
 final class Coordinator: NSObject, ObservableObject {
 
     @Published private(set) var setupViewModel: SetupViewModel?
+#if arch(arm64)
     @Published private(set) var displayedVirtualMachine: VZVirtualMachine?
+#endif
     @Published private(set) var isVirtualMachineVisible = false
     @Published private(set) var virtualMachineProfiles: [MachineProfile]
     @Published var selectedProfileID: MachineProfile.ID? {
@@ -53,9 +57,11 @@ final class Coordinator: NSObject, ObservableObject {
 
     private var modelContext: ModelContext?
 
+#if arch(arm64)
     private var virtualMachineResponder: MacOSVirtualMachineDelegate?
 
     private var virtualMachine: VZVirtualMachine!
+#endif
 
     private var installationProcess: Process?
     private enum RestoreImageDownloadMode {
@@ -71,9 +77,9 @@ final class Coordinator: NSObject, ObservableObject {
     private var isSwitchingRestoreImageDownloadSession = false
     private var macOSInstallationObserver: NSKeyValueObservation?
     private var restoreImageDownloadSession: URLSession?
+#if arch(arm64)
     private var installationVirtualMachineResponder: MacOSVirtualMachineDelegate?
     private var installationVirtualMachine: VZVirtualMachine?
-#if arch(arm64)
     private var macOSInstaller: VZMacOSInstaller?
 #endif
     private var isInstallationInProgress = false
@@ -319,7 +325,11 @@ final class Coordinator: NSObject, ObservableObject {
     }
 
     var canStopVirtualMachine: Bool {
+#if arch(arm64)
         displayedVirtualMachine != nil || virtualMachine != nil || selectedProfile?.status == .running
+#else
+        false
+#endif
     }
 
     private func markSelectedProfileStoppedIfNeeded() {
@@ -469,8 +479,61 @@ final class Coordinator: NSObject, ObservableObject {
             return
         }
 
-        virtualMachineProfiles[selectedProfileIndex].diskSizeInGiB = max(32, diskSizeInGiB)
+        let requestedDiskSizeInGiB = max(32, diskSizeInGiB)
+        let currentProfile = virtualMachineProfiles[selectedProfileIndex]
+        guard requestedDiskSizeInGiB != currentProfile.diskSizeInGiB else {
+            return
+        }
+
+        if currentProfile.status == .running || currentProfile.status == .starting || currentProfile.status == .installing {
+            showInformationAlert("Stop the virtual machine before changing its disk size.".localized)
+            return
+        }
+
+        if currentProfile.isInstalledOnDisk {
+            guard requestedDiskSizeInGiB > currentProfile.diskSizeInGiB else {
+                showInformationAlert("VirtualiseOS can increase a virtual machine disk, but it cannot safely shrink an installed macOS disk.".localized)
+                return
+            }
+
+            do {
+                try resizeDiskImage(for: currentProfile, to: requestedDiskSizeInGiB)
+                virtualMachineProfiles[selectedProfileIndex].diskSizeInGiB = requestedDiskSizeInGiB
+                saveProfiles()
+                showGuestDiskExpansionInstructions(newSizeInGiB: requestedDiskSizeInGiB)
+            } catch {
+                showInformationAlert(error.localizedDescription)
+            }
+            return
+        }
+
+        virtualMachineProfiles[selectedProfileIndex].diskSizeInGiB = requestedDiskSizeInGiB
         saveProfiles()
+    }
+
+    private func resizeDiskImage(for profile: MachineProfile, to diskSizeInGiB: Int) throws {
+        let diskImageSizeInBytes = UInt64(diskSizeInGiB) * 1024 * 1024 * 1024
+        let diskFd = open(profile.diskImageURL.path, O_RDWR)
+
+        guard diskFd != -1 else {
+            throw NSError(domain: "VirtualiseOS", code: 20, userInfo: [
+                NSLocalizedDescriptionKey: "Cannot open the virtual machine disk image.".localized
+            ])
+        }
+
+        defer {
+            close(diskFd)
+        }
+
+        guard ftruncate(diskFd, off_t(diskImageSizeInBytes)) == 0 else {
+            throw NSError(domain: "VirtualiseOS", code: 21, userInfo: [
+                NSLocalizedDescriptionKey: "Cannot resize the virtual machine disk image.".localized
+            ])
+        }
+    }
+
+    private func showGuestDiskExpansionInstructions(newSizeInGiB: Int) {
+        showInformationAlert("The VM disk image was increased to %d GB. To use the extra space inside macOS, start the virtual machine, open Disk Utility in the guest, select the internal APFS container, and expand it to fill the newly available space. You can also use diskutil inside the guest if you prefer Terminal.".localized(newSizeInGiB))
     }
 
     func selectProfile(_ profile: MachineProfile) {

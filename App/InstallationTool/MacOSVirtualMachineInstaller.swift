@@ -6,9 +6,10 @@
 //  Copyright © 2026 M.T.D.Technology SRL. All rights reserved.
 //
 
-import Virtualization
+import Foundation
 
 #if arch(arm64)
+import Virtualization
 
 class MacOSVirtualMachineInstaller: NSObject {
     static let defaultDiskImageSizeInGiB: UInt64 = 128

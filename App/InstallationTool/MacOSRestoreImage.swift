@@ -7,9 +7,9 @@
 //
 
 import Foundation
-import Virtualization
 
 #if arch(arm64)
+import Virtualization
 
 class MacOSRestoreImage: NSObject {
     private var downloadObserver: NSKeyValueObservation?

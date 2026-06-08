@@ -61,7 +61,7 @@ struct VirtualMachineDetailView: View {
             Text("Configuration".localized)
                 .font(.headline)
                 .foregroundStyle(primaryTextStyle)
-            
+            Divider()
             ActionRowView(
                 title: "VM Location".localized,
                 value: profile.vmBundlePath,
@@ -70,16 +70,13 @@ struct VirtualMachineDetailView: View {
                 }
             
             Divider()
-            
             ActionRowView(
                 title: "Shared Folder".localized,
                 value: profile.sharedFolderPath ?? "No shared folder selected".localized,
                 status: profile.status) {
                     coordinator.chooseSharedFolder()
                 }
-            
             Divider()
-            
             HStack {
                 Text("Memory".localized)
                     .font(Font.body.bold())
@@ -93,9 +90,7 @@ struct VirtualMachineDetailView: View {
                 .pickerStyle(.menu)
                 .disabled(profile.status == .running || profile.status == .installing || profile.status == .starting)
             }
-            
             Divider()
-            
             HStack {
                 Text("Hard Disk Size".localized(profile.diskSizeInGiB))
                     .font(Font.body.bold())
@@ -103,7 +98,6 @@ struct VirtualMachineDetailView: View {
                 Text("%d GB".localized(profile.diskSizeInGiB))
                     .font(Font.body.bold())
                 Stepper(value: diskSizeBinding, in: diskSizeRange, step: 16) {
-                    
                 }
                 .disabled(!canChangeDiskSize)
             }

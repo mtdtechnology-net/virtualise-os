@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1B0E1FF62FE0A86A000EDC8D /* LiquidGlassButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0E1FF52FE0A86A000EDC8D /* LiquidGlassButtonStyle.swift */; };
 		1B157DA42FD0409800256E27 /* SetupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B157DA32FD0409800256E27 /* SetupViewModel.swift */; };
 		1B157DA72FD040A000256E27 /* VirtualiseOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B157DA62FD040A000256E27 /* VirtualiseOSApp.swift */; };
 		1B157DA92FD0530000256E27 /* Coordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B157DA82FD0530000256E27 /* Coordinator.swift */; };
@@ -62,6 +63,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1B0E1FF52FE0A86A000EDC8D /* LiquidGlassButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlassButtonStyle.swift; sourceTree = "<group>"; };
 		1B157DA32FD0409800256E27 /* SetupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupViewModel.swift; sourceTree = "<group>"; };
 		1B157DA62FD040A000256E27 /* VirtualiseOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualiseOSApp.swift; sourceTree = "<group>"; };
 		1B157DA82FD0530000256E27 /* Coordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coordinator.swift; sourceTree = "<group>"; };
@@ -160,6 +162,7 @@
 				1B2FC7772FD1692B00F35C41 /* SetupButtonStyle.swift */,
 				1BE85F7C2FD5F7CF00FA686B /* MachineStatus.swift */,
 				1BE85F822FD5FD9400FA686B /* CardView.swift */,
+				1B0E1FF52FE0A86A000EDC8D /* LiquidGlassButtonStyle.swift */,
 			);
 			path = Reusable;
 			sourceTree = "<group>";
@@ -413,6 +416,7 @@
 				1BE85F352FD20B9E00FA686B /* VirtualMachineDetailView.swift in Sources */,
 				1BE85EF32FD1B79A00FA686B /* BundleStatus.swift in Sources */,
 				1B157DA92FD0530000256E27 /* Coordinator.swift in Sources */,
+				1B0E1FF62FE0A86A000EDC8D /* LiquidGlassButtonStyle.swift in Sources */,
 				1B7C2B612FD17969000F0DB2 /* VirtualMachineLibraryView.swift in Sources */,
 				8F87D54026C34259000EADA4 /* MachineConfigurationHelper.swift in Sources */,
 				1BE85F442FD2110400FA686B /* VirtualMachineRow.swift in Sources */,

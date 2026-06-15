@@ -121,7 +121,7 @@ struct VirtualMachineDetailView: View {
                 Button(primaryActionTitle) {
                     runPrimaryAction()
                 }
-                .buttonStyle(.borderedProminent)
+                .glassButtonStyle(prominent: true)
                 .controlSize(.large)
                 .tint(.blue)
                 .disabled(!isPrimaryActionEnabled)
@@ -130,6 +130,7 @@ struct VirtualMachineDetailView: View {
                     Button("Cancel Installing".localized) {
                         coordinator.cancelSelectedVirtualMachineInstallation()
                     }
+                    .glassButtonStyle()
                     .controlSize(.large)
                     .disabled(!coordinator.canCancelSelectedProfileInstallation)
                 }
@@ -138,6 +139,7 @@ struct VirtualMachineDetailView: View {
                     Button("Stop VM".localized) {
                         coordinator.stopVirtualMachineAndShowSettings()
                     }
+                    .glassButtonStyle()
                     .controlSize(.large)
                 }
                 
@@ -148,6 +150,7 @@ struct VirtualMachineDetailView: View {
                 } label: {
                     Label("Delete VM".localized, systemImage: "trash")
                 }
+                .glassButtonStyle()
                 .controlSize(.large)
                 .disabled(!coordinator.canDeleteSelectedProfile)
             }

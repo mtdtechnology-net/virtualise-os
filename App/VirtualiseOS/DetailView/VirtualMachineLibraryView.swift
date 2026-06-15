@@ -50,7 +50,7 @@ struct VirtualMachineLibraryView: View {
                     Label("Add".localized, systemImage: "plus")
                         .labelStyle(.iconOnly)
                 }
-                .buttonStyle(.borderedProminent)
+                .glassButtonStyle(prominent: true)
                 .tint(.blue)
 
                 Button {
@@ -59,6 +59,7 @@ struct VirtualMachineLibraryView: View {
                     Label("Delete".localized, systemImage: "trash")
                         .labelStyle(.iconOnly)
                 }
+                .glassButtonStyle()
                 .disabled(!coordinator.canDeleteSelectedProfile)
 
                 Spacer()

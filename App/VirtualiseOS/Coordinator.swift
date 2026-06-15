@@ -217,19 +217,57 @@ final class Coordinator: NSObject, ObservableObject {
         return savedMemorySizeInGiB > 0 ? savedMemorySizeInGiB : MachineConfigurationHelper.defaultMemorySizeInGiB
     }
 
-    private static func normalizedVMLocation(_ url: URL) -> URL {
-        if url.lastPathComponent == "VM.bundle" || url.pathExtension == "bundle" {
+    private static func sanitizedBundleBaseName(from profileName: String) -> String {
+        let invalidCharacters = CharacterSet(charactersIn: "/:")
+            .union(.newlines)
+            .union(.controlCharacters)
+        let components = profileName
+            .components(separatedBy: invalidCharacters)
+            .joined(separator: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+
+        let baseName = components.joined(separator: "-")
+        return baseName.isEmpty ? "Virtual-Machine" : baseName
+    }
+
+    private static func bundleName(for profileName: String) -> String {
+        "\(sanitizedBundleBaseName(from: profileName)).bundle"
+    }
+
+    private static func normalizedVMLocation(_ url: URL, profileName: String) -> URL {
+        if url.pathExtension == "bundle" {
             return url
         }
 
-        return url.appendingPathComponent("VM.bundle", isDirectory: true)
+        return url.appendingPathComponent(bundleName(for: profileName), isDirectory: true)
+    }
+
+    private func uniqueVMLocation(in parentURL: URL, profileName: String) -> URL {
+        let baseName = Self.sanitizedBundleBaseName(from: profileName)
+        let usedPaths = Set(virtualMachineProfiles.map { $0.vmBundleURL.standardizedFileURL.path })
+        var candidate = parentURL.appendingPathComponent("\(baseName).bundle", isDirectory: true)
+        var index = 2
+
+        while usedPaths.contains(candidate.standardizedFileURL.path) || FileManager.default.fileExists(atPath: candidate.path) {
+            candidate = parentURL.appendingPathComponent("\(baseName)-\(index).bundle", isDirectory: true)
+            index += 1
+        }
+
+        return candidate
     }
 
     private func createDefaultProfileIfNeeded() {
-        let profile = MachineProfile(name: "Primary VM".localized,
+        let profileName = "Primary VM".localized
+        let legacyDefaultURL = applicationSupportURL.appendingPathComponent("VM.bundle", isDirectory: true)
+        let defaultURL = FileManager.default.fileExists(atPath: legacyDefaultURL.path)
+            ? legacyDefaultURL
+            : uniqueVMLocation(in: applicationSupportURL, profileName: profileName)
+        let profile = MachineProfile(name: profileName,
                                             memorySizeInGiB: Self.savedMemorySizeInGiB(),
                                             diskSizeInGiB: Int(defaultDiskImageSizeInGiB),
-                                            vmBundlePath: vmBundleURL.path,
+                                            vmBundlePath: defaultURL.path,
                                             status: .notInstalled)
         virtualMachineProfiles = [profile]
         selectedProfileID = profile.id
@@ -363,7 +401,19 @@ final class Coordinator: NSObject, ObservableObject {
                        memorySizeInGiB: Int,
                        diskSizeInGiB: Int) {
         do {
-            let normalizedURL = Self.normalizedVMLocation(vmBundleURL)
+            let profileName = name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? nextGeneratedProfileName()
+                : name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let normalizedURL = vmBundleURL.pathExtension == "bundle"
+                ? Self.normalizedVMLocation(vmBundleURL, profileName: profileName)
+                : uniqueVMLocation(in: vmBundleURL, profileName: profileName)
+
+            if virtualMachineProfiles.contains(where: { $0.vmBundleURL.standardizedFileURL.path == normalizedURL.standardizedFileURL.path }) {
+                throw NSError(domain: "VirtualiseOS", code: 22, userInfo: [
+                    NSLocalizedDescriptionKey: "A virtual machine already uses this bundle location.".localized
+                ])
+            }
+
             if !FileManager.default.fileExists(atPath: normalizedURL.path) {
                 try FileManager.default.createDirectory(at: normalizedURL, withIntermediateDirectories: true)
             }
@@ -373,9 +423,6 @@ final class Coordinator: NSObject, ObservableObject {
             let sharedBookmarkData = try sharedFolderURL?.bookmarkData(options: URL.BookmarkCreationOptions.withSecurityScope,
                                                                        includingResourceValuesForKeys: nil,
                                                                        relativeTo: nil)
-            let profileName = name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                ? nextGeneratedProfileName()
-                : name.trimmingCharacters(in: .whitespacesAndNewlines)
             let profile = MachineProfile(name: profileName,
                                          osVersion: osVersion,
                                                 restoreImageURLString: restoreImageURL?.absoluteString,

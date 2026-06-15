@@ -13,12 +13,14 @@ import SwiftUI
 struct CreateVirtualMachineView: View {
     @ObservedObject var coordinator: Coordinator
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @StateObject private var model = CreateVirtualMachineViewModel()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             Text("Create Virtual Machine".localized)
                 .font(.system(size: 28, weight: .semibold))
+                .foregroundStyle(primaryTextStyle)
 
             TextField("Name".localized, text: $model.name)
                 .textFieldStyle(.roundedBorder)
@@ -31,13 +33,15 @@ struct CreateVirtualMachineView: View {
                         .tag(value)
                 }
             }
+            .foregroundStyle(primaryTextStyle)
 
             Stepper(value: $model.diskSizeInGiB, in: 32...2048, step: 16) {
                 Text("Hard Disk: %d GB".localized(model.diskSizeInGiB))
+                    .foregroundStyle(primaryTextStyle)
             }
 
             chooserRow(title: "VM Location".localized,
-                       value: model.vmBundleURL?.path ?? "Choose where VM.bundle should be stored".localized) {
+                       value: model.vmBundleURL?.path ?? "Choose a storage folder or VM bundle".localized) {
                 model.vmBundleURL = chooseFolderOrBundle()
             }
 
@@ -52,6 +56,7 @@ struct CreateVirtualMachineView: View {
                 Button("Cancel".localized) {
                     dismiss()
                 }
+                .glassButtonStyle()
 
                 Spacer()
 
@@ -70,14 +75,14 @@ struct CreateVirtualMachineView: View {
                                               diskSizeInGiB: model.diskSizeInGiB)
                     dismiss()
                 }
-                .buttonStyle(.borderedProminent)
+                .glassButtonStyle(prominent: true)
                 .tint(.blue)
                 .disabled(!model.canCreate)
             }
         }
         .padding(28)
         .frame(width: 520, height: 520)
-        .background(Color.white)
+        .background(backgroundColor)
         .task {
             model.fetchLatestSupportedRestoreImageIfNeeded()
         }
@@ -88,6 +93,7 @@ struct CreateVirtualMachineView: View {
             HStack {
                 Text("macOS".localized)
                     .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(primaryTextStyle)
                 Spacer()
                 Picker("", selection: $model.selectedRestoreImageID) {
                     if model.restoreImageOptions.isEmpty {
@@ -113,7 +119,7 @@ struct CreateVirtualMachineView: View {
             } else {
                 Text("Apple only exposes the latest restore image supported by this Mac through Virtualization.".localized)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(secondaryTextStyle)
                     .lineLimit(2)
             }
         }
@@ -124,18 +130,35 @@ struct CreateVirtualMachineView: View {
             HStack {
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(primaryTextStyle)
                 Spacer()
                 Button("Choose...".localized, action: action)
-                    .buttonStyle(.borderedProminent)
+                    .glassButtonStyle(prominent: true)
                     .tint(.blue)
             }
 
             Text(value)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(secondaryTextStyle)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
+    }
+
+    private var isDarkMode: Bool {
+        colorScheme == .dark
+    }
+
+    private var backgroundColor: Color {
+        isDarkMode ? VirtualiseOSPalette.detailBackground : .white
+    }
+
+    private var primaryTextStyle: Color {
+        isDarkMode ? .white : .primary
+    }
+
+    private var secondaryTextStyle: Color {
+        isDarkMode ? .white.opacity(0.72) : .secondary
     }
 
     private func chooseFolderOrBundle() -> URL? {
@@ -145,7 +168,7 @@ struct CreateVirtualMachineView: View {
         panel.allowsMultipleSelection = false
         panel.canCreateDirectories = true
         panel.treatsFilePackagesAsDirectories = false
-        panel.message = "Choose VM.bundle or a folder where VirtualiseOS should store it.".localized
+        panel.message = "Choose an existing .bundle or a folder where VirtualiseOS should create the VM bundle.".localized
         return panel.runModal() == .OK ? panel.url : nil
     }
 

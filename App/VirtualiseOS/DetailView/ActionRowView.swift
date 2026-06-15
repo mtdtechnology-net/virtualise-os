@@ -27,7 +27,7 @@ struct ActionRowView: View {
                     .foregroundStyle(.primary)
                 Spacer()
                 Button("Choose".localized, action: action)
-                    .buttonStyle(.borderedProminent)
+                    .glassButtonStyle(prominent: true)
                     .tint(.blue)
                     .disabled(status == .running || status == .installing || status == .starting)
             }

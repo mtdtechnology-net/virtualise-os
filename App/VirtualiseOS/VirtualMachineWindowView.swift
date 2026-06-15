@@ -39,6 +39,7 @@ struct VirtualMachineWindowView: View {
                 Button("Stop VM".localized) {
                     coordinator.stopVirtualMachineAndShowSettings()
                 }
+                .glassButtonStyle()
                 .disabled(coordinator.displayedVirtualMachine == nil)
             }
         }

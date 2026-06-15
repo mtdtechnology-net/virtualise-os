@@ -15,6 +15,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.0.13] - 2026-06-15
+
+### Added
+
+### Changed
+
+### Fixed
+
+---
+
 ## [0.0.12] - 2026-06-08
 
 ### Added
@@ -172,7 +182,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Fixed the Xcode project `Info.plist` path after the source layout refactor.
 
-[Unreleased]: https://github.com/mtdtechnology-net/virtualization-macos/compare/v0.0.12...HEAD
+[Unreleased]: https://github.com/mtdtechnology-net/virtualization-macos/compare/v0.0.13...HEAD
+[0.0.13]: https://github.com/mtdtechnology-net/virtualization-macos/compare/v0.0.12...v0.0.13
 [0.0.12]: https://github.com/mtdtechnology-net/virtualization-macos/compare/v0.0.11...v0.0.12
 [0.0.11]: https://github.com/mtdtechnology-net/virtualization-macos/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/mtdtechnology-net/virtualization-macos/compare/v0.0.9...v0.0.10

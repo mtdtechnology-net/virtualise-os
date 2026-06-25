@@ -2857,6 +2857,9 @@
         }
       }
     },
+    "Virtualize OS" : {
+
+    },
     "VM bundle path: %@" : {
       "extractionState" : "manual",
       "localizations" : {

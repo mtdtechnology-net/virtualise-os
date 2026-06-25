@@ -101,10 +101,44 @@ struct VirtualMachineDetailView: View {
                 }
                 .disabled(!canChangeDiskSize)
             }
+            Divider()
+            portForwardingSettings
         }
         .padding(22)
         .background(Color("cardWhite"))
         .modifier(CardModifier())
+    }
+
+    private var portForwardingSettings: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle("Enable SSH Port Forwarding".localized, isOn: portForwardingEnabledBinding)
+                .disabled(!canChangePortForwarding)
+
+            if profile.portForwarding.isEnabled {
+                HStack(spacing: 12) {
+                    TextField("Guest IP".localized, text: guestAddressBinding)
+                        .textFieldStyle(.roundedBorder)
+                        .disabled(!canChangePortForwarding)
+
+                    Stepper(value: hostPortBinding, in: 1024...65535) {
+                        Text("Host: %d".localized(profile.portForwarding.hostPort))
+                            .frame(width: 90, alignment: .leading)
+                    }
+                    .disabled(!canChangePortForwarding)
+
+                    Stepper(value: guestPortBinding, in: 1...65535) {
+                        Text("Guest: %d".localized(profile.portForwarding.guestPort))
+                            .frame(width: 90, alignment: .leading)
+                    }
+                    .disabled(!canChangePortForwarding)
+                }
+
+                Text(profile.portForwarding.summary)
+                    .font(.caption)
+                    .foregroundStyle(secondaryTextStyle)
+                    .lineLimit(2)
+            }
+        }
     }
     
     private var actionPanel: some View {
@@ -170,6 +204,42 @@ struct VirtualMachineDetailView: View {
                 set: { coordinator.updateSelectedProfileDiskSize($0) })
     }
 
+    private var portForwardingEnabledBinding: Binding<Bool> {
+        Binding(get: { profile.portForwarding.isEnabled },
+                set: { isEnabled in
+                    var configuration = profile.portForwarding
+                    configuration.isEnabled = isEnabled
+                    coordinator.updateSelectedProfilePortForwarding(configuration)
+                })
+    }
+
+    private var guestAddressBinding: Binding<String> {
+        Binding(get: { profile.portForwarding.guestAddress },
+                set: { guestAddress in
+                    var configuration = profile.portForwarding
+                    configuration.guestAddress = guestAddress
+                    coordinator.updateSelectedProfilePortForwarding(configuration)
+                })
+    }
+
+    private var hostPortBinding: Binding<Int> {
+        Binding(get: { profile.portForwarding.hostPort },
+                set: { hostPort in
+                    var configuration = profile.portForwarding
+                    configuration.hostPort = hostPort
+                    coordinator.updateSelectedProfilePortForwarding(configuration)
+                })
+    }
+
+    private var guestPortBinding: Binding<Int> {
+        Binding(get: { profile.portForwarding.guestPort },
+                set: { guestPort in
+                    var configuration = profile.portForwarding
+                    configuration.guestPort = guestPort
+                    coordinator.updateSelectedProfilePortForwarding(configuration)
+                })
+    }
+
     private var diskSizeRange: ClosedRange<Int> {
         if profile.isInstalledOnDisk {
             return profile.diskSizeInGiB...2048
@@ -179,6 +249,10 @@ struct VirtualMachineDetailView: View {
     }
 
     private var canChangeDiskSize: Bool {
+        profile.status != .running && profile.status != .installing && profile.status != .starting
+    }
+
+    private var canChangePortForwarding: Bool {
         profile.status != .running && profile.status != .installing && profile.status != .starting
     }
     

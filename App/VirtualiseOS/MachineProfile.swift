@@ -24,6 +24,7 @@ struct MachineProfile: Identifiable, Codable, Equatable {
     var status: BundleStatus
     var installProgress: Double
     var statusDetail: String
+    var portForwarding: PortForwardingConfiguration
 
     init(id: UUID = UUID(),
          name: String,
@@ -38,7 +39,8 @@ struct MachineProfile: Identifiable, Codable, Equatable {
          sharedFolderBookmarkData: Data? = nil,
          status: BundleStatus = .notInstalled,
          installProgress: Double = 0,
-         statusDetail: String = "") {
+         statusDetail: String = "",
+         portForwarding: PortForwardingConfiguration = .disabled) {
         self.id = id
         self.name = name
         self.createdAt = createdAt
@@ -53,6 +55,7 @@ struct MachineProfile: Identifiable, Codable, Equatable {
         self.status = status
         self.installProgress = installProgress
         self.statusDetail = statusDetail
+        self.portForwarding = portForwarding
     }
 
     init(record: ProfileRecord) {
@@ -69,7 +72,45 @@ struct MachineProfile: Identifiable, Codable, Equatable {
                   sharedFolderBookmarkData: record.sharedFolderBookmarkData,
                   status: BundleStatus(rawValue: record.statusRawValue) ?? .notInstalled,
                   installProgress: record.installProgress,
-                  statusDetail: record.statusDetail)
+                  statusDetail: record.statusDetail,
+                  portForwarding: PortForwardingConfiguration(record: record))
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case createdAt
+        case osVersion
+        case restoreImageURLString
+        case memorySizeInGiB
+        case diskSizeInGiB
+        case vmBundlePath
+        case vmBundleBookmarkData
+        case sharedFolderPath
+        case sharedFolderBookmarkData
+        case status
+        case installProgress
+        case statusDetail
+        case portForwarding
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(id: try container.decode(UUID.self, forKey: .id),
+                  name: try container.decode(String.self, forKey: .name),
+                  createdAt: try container.decode(Date.self, forKey: .createdAt),
+                  osVersion: try container.decodeIfPresent(String.self, forKey: .osVersion),
+                  restoreImageURLString: try container.decodeIfPresent(String.self, forKey: .restoreImageURLString),
+                  memorySizeInGiB: try container.decode(Int.self, forKey: .memorySizeInGiB),
+                  diskSizeInGiB: try container.decode(Int.self, forKey: .diskSizeInGiB),
+                  vmBundlePath: try container.decode(String.self, forKey: .vmBundlePath),
+                  vmBundleBookmarkData: try container.decodeIfPresent(Data.self, forKey: .vmBundleBookmarkData),
+                  sharedFolderPath: try container.decodeIfPresent(String.self, forKey: .sharedFolderPath),
+                  sharedFolderBookmarkData: try container.decodeIfPresent(Data.self, forKey: .sharedFolderBookmarkData),
+                  status: try container.decode(BundleStatus.self, forKey: .status),
+                  installProgress: try container.decode(Double.self, forKey: .installProgress),
+                  statusDetail: try container.decode(String.self, forKey: .statusDetail),
+                  portForwarding: try container.decodeIfPresent(PortForwardingConfiguration.self, forKey: .portForwarding) ?? .disabled)
     }
 
     var vmBundleURL: URL {
@@ -117,5 +158,49 @@ struct MachineProfile: Identifiable, Codable, Equatable {
         requiredFileURLs
             .filter { !FileManager.default.fileExists(atPath: $0.path) }
             .map(\.lastPathComponent)
+    }
+}
+
+struct PortForwardingConfiguration: Codable, Equatable {
+    var isEnabled: Bool
+    var hostPort: Int
+    var guestAddress: String
+    var guestPort: Int
+
+    static let disabled = PortForwardingConfiguration(isEnabled: false,
+                                                      hostPort: 2222,
+                                                      guestAddress: "",
+                                                      guestPort: 22)
+
+    init(isEnabled: Bool = false,
+         hostPort: Int = 2222,
+         guestAddress: String = "",
+         guestPort: Int = 22) {
+        self.isEnabled = isEnabled
+        self.hostPort = hostPort
+        self.guestAddress = guestAddress
+        self.guestPort = guestPort
+    }
+
+    init(record: ProfileRecord) {
+        self.init(isEnabled: record.isPortForwardingEnabled,
+                  hostPort: record.portForwardingHostPort,
+                  guestAddress: record.portForwardingGuestAddress,
+                  guestPort: record.portForwardingGuestPort)
+    }
+
+    var summary: String {
+        guard isEnabled else {
+            return "Disabled".localized
+        }
+
+        let hostAddress = PortForwarder.hostIPAddress ?? "this Mac".localized
+        let hostEndpoint = "\(hostAddress):\(hostPort)"
+
+        guard !guestAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return "Host endpoint %@, waiting for guest IP address".localized(hostEndpoint)
+        }
+
+        return "%@ forwards to %@:%d".localized(hostEndpoint, guestAddress, guestPort)
     }
 }

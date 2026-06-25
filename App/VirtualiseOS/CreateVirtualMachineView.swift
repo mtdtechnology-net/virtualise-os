@@ -50,6 +50,8 @@ struct CreateVirtualMachineView: View {
                 model.sharedFolderURL = chooseFolder()
             }
 
+            portForwardingSection
+
             Spacer()
 
             HStack {
@@ -72,7 +74,8 @@ struct CreateVirtualMachineView: View {
                                               restoreImageURL: selectedRestoreImageOption.url,
                                               osVersion: selectedRestoreImageOption.displayName,
                                               memorySizeInGiB: model.memorySizeInGiB,
-                                              diskSizeInGiB: model.diskSizeInGiB)
+                                              diskSizeInGiB: model.diskSizeInGiB,
+                                              portForwarding: model.portForwardingConfiguration)
                     dismiss()
                 }
                 .glassButtonStyle(prominent: true)
@@ -81,11 +84,49 @@ struct CreateVirtualMachineView: View {
             }
         }
         .padding(28)
-        .frame(width: 520, height: 520)
+        .frame(width: 560, height: 660)
         .background(backgroundColor)
         .task {
             model.fetchLatestSupportedRestoreImageIfNeeded()
         }
+    }
+
+    private var portForwardingSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle("Enable SSH Port Forwarding".localized, isOn: $model.isPortForwardingEnabled)
+                .foregroundStyle(primaryTextStyle)
+
+            if model.isPortForwardingEnabled {
+                HStack(spacing: 12) {
+                    TextField("Guest IP".localized, text: $model.portForwardingGuestAddress)
+                        .textFieldStyle(.roundedBorder)
+
+                    Stepper(value: $model.portForwardingHostPort, in: 1024...65535) {
+                        Text("Host: %d".localized(model.portForwardingHostPort))
+                            .frame(width: 90, alignment: .leading)
+                    }
+
+                    Stepper(value: $model.portForwardingGuestPort, in: 1...65535) {
+                        Text("Guest: %d".localized(model.portForwardingGuestPort))
+                            .frame(width: 90, alignment: .leading)
+                    }
+                }
+
+                Text("Host endpoint: %@".localized(hostEndpoint))
+                    .font(.caption)
+                    .foregroundStyle(primaryTextStyle)
+
+                Text("External clients can connect to this Mac on the host port, and VirtualiseOS forwards traffic to the guest address and port while the VM is running.".localized)
+                    .font(.caption)
+                    .foregroundStyle(secondaryTextStyle)
+                    .lineLimit(3)
+            }
+        }
+    }
+
+    private var hostEndpoint: String {
+        let hostAddress = PortForwarder.hostIPAddress ?? "this Mac".localized
+        return "\(hostAddress):\(model.portForwardingHostPort)"
     }
 
     private var osSelectionRow: some View {

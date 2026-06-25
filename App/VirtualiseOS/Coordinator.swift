@@ -59,6 +59,7 @@ final class Coordinator: NSObject, ObservableObject {
 
 #if arch(arm64)
     private var virtualMachineResponder: MacOSVirtualMachineDelegate?
+    private var portForwarder: PortForwarder?
 
     private var virtualMachine: VZVirtualMachine!
 #endif
@@ -399,7 +400,8 @@ final class Coordinator: NSObject, ObservableObject {
                        restoreImageURL: URL?,
                        osVersion: String?,
                        memorySizeInGiB: Int,
-                       diskSizeInGiB: Int) {
+                       diskSizeInGiB: Int,
+                       portForwarding: PortForwardingConfiguration = .disabled) {
         do {
             let profileName = name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? nextGeneratedProfileName()
@@ -433,7 +435,8 @@ final class Coordinator: NSObject, ObservableObject {
                                                 sharedFolderPath: sharedFolderURL?.path,
                                                 sharedFolderBookmarkData: sharedBookmarkData,
                                                 status: .notInstalled,
-                                                statusDetail: "Download and install macOS to create this VM.".localized)
+                                                statusDetail: "Download and install macOS to create this VM.".localized,
+                                                portForwarding: portForwarding)
             virtualMachineProfiles.append(profile)
             selectedProfileID = profile.id
             refreshAllProfileStatuses()
@@ -556,6 +559,22 @@ final class Coordinator: NSObject, ObservableObject {
 
         virtualMachineProfiles[selectedProfileIndex].diskSizeInGiB = requestedDiskSizeInGiB
         saveProfiles()
+    }
+
+    func updateSelectedProfilePortForwarding(_ portForwarding: PortForwardingConfiguration) {
+        guard let selectedProfileIndex else {
+            return
+        }
+
+        virtualMachineProfiles[selectedProfileIndex].portForwarding = sanitized(portForwarding)
+        saveProfiles()
+    }
+
+    private func sanitized(_ portForwarding: PortForwardingConfiguration) -> PortForwardingConfiguration {
+        PortForwardingConfiguration(isEnabled: portForwarding.isEnabled,
+                                    hostPort: min(max(portForwarding.hostPort, 1), 65535),
+                                    guestAddress: portForwarding.guestAddress.trimmingCharacters(in: .whitespacesAndNewlines),
+                                    guestPort: min(max(portForwarding.guestPort, 1), 65535))
     }
 
     private func resizeDiskImage(for profile: MachineProfile, to diskSizeInGiB: Int) throws {
@@ -888,8 +907,27 @@ final class Coordinator: NSObject, ObservableObject {
         updateSelectedProfile(status: .running,
                               detail: "Virtual machine is running.".localized,
                               progress: 100)
+        startPortForwardingIfNeeded()
         isVirtualMachineVisible = true
         virtualMachineWindowRequest += 1
+    }
+
+    private func startPortForwardingIfNeeded() {
+        portForwarder?.stop()
+        portForwarder = nil
+
+        guard let selectedProfile,
+              selectedProfile.portForwarding.isEnabled else {
+            return
+        }
+
+        do {
+            let forwarder = PortForwarder(configuration: sanitized(selectedProfile.portForwarding))
+            try forwarder.start()
+            portForwarder = forwarder
+        } catch {
+            showInformationAlert(error.localizedDescription)
+        }
     }
 
     private func showVirtualMachineStartingState() {
@@ -914,6 +952,8 @@ final class Coordinator: NSObject, ObservableObject {
         updateSelectedProfile(status: .stopped,
                               detail: "Virtual machine is stopped.".localized,
                               progress: 100)
+        portForwarder?.stop()
+        portForwarder = nil
         displayedVirtualMachine = nil
         isVirtualMachineVisible = false
         virtualMachine = nil

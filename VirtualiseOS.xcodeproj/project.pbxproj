@@ -19,6 +19,15 @@
 		1B7C2B612FD17969000F0DB2 /* VirtualMachineLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B7C2B602FD17969000F0DB2 /* VirtualMachineLibraryView.swift */; };
 		1B7C2B632FD17977000F0DB2 /* VirtualMachineWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B7C2B622FD17977000F0DB2 /* VirtualMachineWindowView.swift */; };
 		1B93CCAC2FB75E5800994330 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1B93CCAB2FB75E5800994330 /* Localizable.xcstrings */; };
+		1BE307772FEC3F3000B32A13 /* PortForwarder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE307762FEC3F3000B32A13 /* PortForwarder.swift */; };
+		1BE307792FED428700B32A13 /* Coordinator+Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE307782FED428700B32A13 /* Coordinator+Persistence.swift */; };
+		1BE3077B2FED428800B32A13 /* Coordinator+Profiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE3077A2FED428800B32A13 /* Coordinator+Profiles.swift */; };
+		1BE3077D2FED428800B32A13 /* Coordinator+Runtime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE3077C2FED428800B32A13 /* Coordinator+Runtime.swift */; };
+		1BE3077F2FED428900B32A13 /* Coordinator+Setup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE3077E2FED428900B32A13 /* Coordinator+Setup.swift */; };
+		1BE307812FED428900B32A13 /* Coordinator+Installation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE307802FED428900B32A13 /* Coordinator+Installation.swift */; };
+		1BE307832FED428900B32A13 /* Coordinator+RestoreImageDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE307822FED428900B32A13 /* Coordinator+RestoreImageDownload.swift */; };
+		1BE307852FED428A00B32A13 /* Coordinator+MacOSInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE307842FED428A00B32A13 /* Coordinator+MacOSInstaller.swift */; };
+		1BE307872FED428B00B32A13 /* Coordinator+Termination.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE307862FED428B00B32A13 /* Coordinator+Termination.swift */; };
 		1BE85EF32FD1B79A00FA686B /* BundleStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE85EF22FD1B79300FA686B /* BundleStatus.swift */; };
 		1BE85EF52FD1B7EC00FA686B /* ProfileRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE85EF42FD1B7EA00FA686B /* ProfileRecord.swift */; };
 		1BE85F2C2FD1DF1600FA686B /* String+Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BE85F2B2FD1DF1600FA686B /* String+Localization.swift */; };
@@ -75,6 +84,15 @@
 		1B7C2B602FD17969000F0DB2 /* VirtualMachineLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualMachineLibraryView.swift; sourceTree = "<group>"; };
 		1B7C2B622FD17977000F0DB2 /* VirtualMachineWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualMachineWindowView.swift; sourceTree = "<group>"; };
 		1B93CCAB2FB75E5800994330 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		1BE307762FEC3F3000B32A13 /* PortForwarder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortForwarder.swift; sourceTree = "<group>"; };
+		1BE307782FED428700B32A13 /* Coordinator+Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Coordinator+Persistence.swift"; sourceTree = "<group>"; };
+		1BE3077A2FED428800B32A13 /* Coordinator+Profiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Coordinator+Profiles.swift"; sourceTree = "<group>"; };
+		1BE3077C2FED428800B32A13 /* Coordinator+Runtime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Coordinator+Runtime.swift"; sourceTree = "<group>"; };
+		1BE3077E2FED428900B32A13 /* Coordinator+Setup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Coordinator+Setup.swift"; sourceTree = "<group>"; };
+		1BE307802FED428900B32A13 /* Coordinator+Installation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Coordinator+Installation.swift"; sourceTree = "<group>"; };
+		1BE307822FED428900B32A13 /* Coordinator+RestoreImageDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Coordinator+RestoreImageDownload.swift"; sourceTree = "<group>"; };
+		1BE307842FED428A00B32A13 /* Coordinator+MacOSInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Coordinator+MacOSInstaller.swift"; sourceTree = "<group>"; };
+		1BE307862FED428B00B32A13 /* Coordinator+Termination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Coordinator+Termination.swift"; sourceTree = "<group>"; };
 		1BE85EF22FD1B79300FA686B /* BundleStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleStatus.swift; sourceTree = "<group>"; };
 		1BE85EF42FD1B7EA00FA686B /* ProfileRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRecord.swift; sourceTree = "<group>"; };
 		1BE85F2B2FD1DF1600FA686B /* String+Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Localization.swift"; sourceTree = "<group>"; };
@@ -249,6 +267,15 @@
 				1B7C2B622FD17977000F0DB2 /* VirtualMachineWindowView.swift */,
 				1BE85F2E2FD1E89100FA686B /* CreateVirtualMachineViewModel.swift */,
 				1BE85F302FD1E8AC00FA686B /* CreateVirtualMachineView.swift */,
+				1BE307762FEC3F3000B32A13 /* PortForwarder.swift */,
+				1BE307782FED428700B32A13 /* Coordinator+Persistence.swift */,
+				1BE3077A2FED428800B32A13 /* Coordinator+Profiles.swift */,
+				1BE3077C2FED428800B32A13 /* Coordinator+Runtime.swift */,
+				1BE3077E2FED428900B32A13 /* Coordinator+Setup.swift */,
+				1BE307802FED428900B32A13 /* Coordinator+Installation.swift */,
+				1BE307822FED428900B32A13 /* Coordinator+RestoreImageDownload.swift */,
+				1BE307842FED428A00B32A13 /* Coordinator+MacOSInstaller.swift */,
+				1BE307862FED428B00B32A13 /* Coordinator+Termination.swift */,
 			);
 			path = VirtualiseOS;
 			sourceTree = "<group>";
@@ -338,7 +365,7 @@
 				BuildIndependentTargetsInParallel = 1;
 				DefaultBuildSystemTypeForWorkspace = Latest;
 				LastSwiftUpdateCheck = 1300;
-				LastUpgradeCheck = 2650;
+				LastUpgradeCheck = 2700;
 				ORGANIZATIONNAME = Apple;
 				TargetAttributes = {
 					8F87D51C26C34111000EADA4 = {
@@ -397,18 +424,25 @@
 				1BE85EF52FD1B7EC00FA686B /* ProfileRecord.swift in Sources */,
 				8F87D53F26C34259000EADA4 /* Path.swift in Sources */,
 				8F87D52126C34111000EADA4 /* AppDelegate.swift in Sources */,
+				1BE307792FED428700B32A13 /* Coordinator+Persistence.swift in Sources */,
 				1BE85F2C2FD1DF1600FA686B /* String+Localization.swift in Sources */,
+				1BE3077B2FED428800B32A13 /* Coordinator+Profiles.swift in Sources */,
 				1BE85F2F2FD1E89100FA686B /* CreateVirtualMachineViewModel.swift in Sources */,
 				1B2FC7782FD1692D00F35C41 /* SetupButtonStyle.swift in Sources */,
+				1BE307772FEC3F3000B32A13 /* PortForwarder.swift in Sources */,
 				1BE85F392FD20C1F00FA686B /* VirtualiseOSPalette.swift in Sources */,
 				8F87D54126C34259000EADA4 /* MacOSVirtualMachineDelegate.swift in Sources */,
 				1B157DA42FD0409800256E27 /* SetupViewModel.swift in Sources */,
+				1BE307832FED428900B32A13 /* Coordinator+RestoreImageDownload.swift in Sources */,
 				1BE85F332FD202B700FA686B /* SplashScreenView.swift in Sources */,
 				1B7C2B5F2FD1783B000F0DB2 /* MachineProfile.swift in Sources */,
+				1BE3077D2FED428800B32A13 /* Coordinator+Runtime.swift in Sources */,
 				1BE85F7F2FD5F8A300FA686B /* BundleStatusColor.swift in Sources */,
 				1B157DA72FD040A000256E27 /* VirtualiseOSApp.swift in Sources */,
 				1B7C2B632FD17977000F0DB2 /* VirtualMachineWindowView.swift in Sources */,
 				1BE85F7B2FD2150500FA686B /* CardModifier.swift in Sources */,
+				1BE307872FED428B00B32A13 /* Coordinator+Termination.swift in Sources */,
+				1BE3077F2FED428900B32A13 /* Coordinator+Setup.swift in Sources */,
 				1B157DAF2FD0530300256E27 /* AppCommands.swift in Sources */,
 				1BE85F852FD60ADD00FA686B /* ActionRowView.swift in Sources */,
 				1B157DAB2FD0530100256E27 /* RootView.swift in Sources */,
@@ -416,9 +450,11 @@
 				1BE85F352FD20B9E00FA686B /* VirtualMachineDetailView.swift in Sources */,
 				1BE85EF32FD1B79A00FA686B /* BundleStatus.swift in Sources */,
 				1B157DA92FD0530000256E27 /* Coordinator.swift in Sources */,
+				1BE307852FED428A00B32A13 /* Coordinator+MacOSInstaller.swift in Sources */,
 				1B0E1FF62FE0A86A000EDC8D /* LiquidGlassButtonStyle.swift in Sources */,
 				1B7C2B612FD17969000F0DB2 /* VirtualMachineLibraryView.swift in Sources */,
 				8F87D54026C34259000EADA4 /* MachineConfigurationHelper.swift in Sources */,
+				1BE307812FED428900B32A13 /* Coordinator+Installation.swift in Sources */,
 				1BE85F442FD2110400FA686B /* VirtualMachineRow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -456,6 +492,7 @@
 			baseConfigurationReference = F4E72614B21833A4E0FE3E98 /* SampleCode.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -522,6 +559,7 @@
 			baseConfigurationReference = F4E72614B21833A4E0FE3E98 /* SampleCode.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -591,6 +629,8 @@
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
 				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
@@ -642,6 +682,8 @@
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
 				ENABLE_RESOURCE_ACCESS_CAMERA = NO;

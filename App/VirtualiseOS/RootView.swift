@@ -18,7 +18,13 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            Group {
+            if isShowingSplash {
+                SplashScreenView()
+                    .transition(.opacity)
+                    .onAppear {
+                        prepareIfNeeded()
+                    }
+            } else {
 #if arch(arm64)
                 VirtualMachineLibraryView(coordinator: coordinator)
                     .onAppear {
@@ -36,14 +42,8 @@ struct RootView: View {
                 }
 #endif
             }
-
-            if isShowingSplash {
-                SplashScreenView()
-                    .transition(.opacity)
-                    .zIndex(10)
-            }
         }
-        .animation(.easeOut(duration: 0.25), value: isShowingSplash)
+        .animation(.easeOut(duration: 0.5), value: isShowingSplash)
         .task {
 #if !arch(arm64)
             try? await Task.sleep(nanoseconds: 900_000_000)

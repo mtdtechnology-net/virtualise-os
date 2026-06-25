@@ -25,6 +25,10 @@ final class ProfileRecord {
     var statusRawValue: String
     var installProgress: Double
     var statusDetail: String
+    var isPortForwardingEnabled: Bool = false
+    var portForwardingHostPort: Int = 2222
+    var portForwardingGuestAddress: String = ""
+    var portForwardingGuestPort: Int = 22
     
     init(profile: MachineProfile) {
         id = profile.id
@@ -41,6 +45,10 @@ final class ProfileRecord {
         statusRawValue = profile.status.rawValue
         installProgress = profile.installProgress
         statusDetail = profile.statusDetail
+        isPortForwardingEnabled = profile.portForwarding.isEnabled
+        portForwardingHostPort = profile.portForwarding.hostPort
+        portForwardingGuestAddress = profile.portForwarding.guestAddress
+        portForwardingGuestPort = profile.portForwarding.guestPort
     }
     
     func apply(_ profile: MachineProfile) {
@@ -57,5 +65,9 @@ final class ProfileRecord {
         statusRawValue = profile.status.rawValue
         installProgress = profile.installProgress
         statusDetail = profile.statusDetail
+        isPortForwardingEnabled = profile.portForwarding.isEnabled
+        portForwardingHostPort = profile.portForwarding.hostPort
+        portForwardingGuestAddress = profile.portForwarding.guestAddress
+        portForwardingGuestPort = profile.portForwarding.guestPort
     }
 }

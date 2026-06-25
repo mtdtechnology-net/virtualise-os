@@ -21,6 +21,10 @@ final class CreateVirtualMachineViewModel: ObservableObject {
     @Published var restoreImageError: String?
     @Published var memorySizeInGiB = MachineConfigurationHelper.defaultMemorySizeInGiB
     @Published var diskSizeInGiB = 128
+    @Published var isPortForwardingEnabled = false
+    @Published var portForwardingHostPort = 2222
+    @Published var portForwardingGuestAddress = ""
+    @Published var portForwardingGuestPort = 22
 
     var selectedRestoreImageOption: RestoreImageOption? {
         restoreImageOptions.first { $0.id == selectedRestoreImageID }
@@ -28,6 +32,13 @@ final class CreateVirtualMachineViewModel: ObservableObject {
 
     var canCreate: Bool {
         vmBundleURL != nil && selectedRestoreImageOption != nil
+    }
+
+    var portForwardingConfiguration: PortForwardingConfiguration {
+        PortForwardingConfiguration(isEnabled: isPortForwardingEnabled,
+                                    hostPort: portForwardingHostPort,
+                                    guestAddress: portForwardingGuestAddress,
+                                    guestPort: portForwardingGuestPort)
     }
 
     func fetchLatestSupportedRestoreImageIfNeeded() {

@@ -12,16 +12,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 ### Fixed
+Fixed an issure related to port forwrding and entitlements.
 
 ---
 
 ## [0.0.14] - 2026-06-25
 
 ### Added
-
+Added support for port forwarding.
 ### Changed
 
 ### Fixed
+Multiple issues.
 
 ---
 

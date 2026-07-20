@@ -250,8 +250,29 @@ extension Coordinator {
                               detail: "Virtual machine is running.".localized,
                               progress: 100)
         startPortForwardingIfNeeded()
+        beginSleepPrevention()
         isVirtualMachineVisible = true
         virtualMachineWindowRequest += 1
+    }
+
+    func beginSleepPrevention() {
+        guard sleepPreventionActivityToken == nil else {
+            return
+        }
+
+        sleepPreventionActivityToken = ProcessInfo.processInfo.beginActivity(
+            options: [.idleSystemSleepDisabled, .idleDisplaySleepDisabled],
+            reason: "A virtual machine is running."
+        )
+    }
+
+    func endSleepPrevention() {
+        guard let sleepPreventionActivityToken else {
+            return
+        }
+
+        ProcessInfo.processInfo.endActivity(sleepPreventionActivityToken)
+        self.sleepPreventionActivityToken = nil
     }
 
     func startPortForwardingIfNeeded() {
@@ -294,6 +315,7 @@ extension Coordinator {
         updateSelectedProfile(status: .stopped,
                               detail: "Virtual machine is stopped.".localized,
                               progress: 100)
+        endSleepPrevention()
         portForwarder?.stop()
         portForwarder = nil
         displayedVirtualMachine = nil
@@ -362,6 +384,7 @@ extension Coordinator {
                                   detail: "Virtual machine is stopped.".localized,
                                   progress: 100)
         }
+        endSleepPrevention()
         displayedVirtualMachine = nil
         isVirtualMachineVisible = false
         virtualMachine = nil

@@ -62,6 +62,7 @@ final class Coordinator: NSObject, ObservableObject {
     var portForwarder: PortForwarder?
 
     var virtualMachine: VZVirtualMachine!
+    var sleepPreventionActivityToken: NSObjectProtocol?
 #endif
 
     var installationProcess: Process?
